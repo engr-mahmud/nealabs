@@ -1,0 +1,194 @@
+// Multi-tenant schema. Every tenant-owned table carries organizationId.
+// Tables marked "RLS" are protected by PostgreSQL Row Level Security
+// (see the init migration) and must be accessed through tenantDb() or systemDb().
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  ACCOUNTANT
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  EXPIRED
+  CANCELED
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  locale       String   @default("en")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships   Membership[]
+  sessions      Session[]
+  resetTokens   PasswordResetToken[]
+  organizations Organization[] @relation("OrganizationCreatedBy")
+
+  @@map("users")
+}
+
+model Session {
+  id                   String   @id @default(cuid())
+  tokenHash            String   @unique
+  userId               String
+  activeOrganizationId String?
+  expiresAt            DateTime
+  lastSeenAt           DateTime @default(now())
+  createdAt            DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Organization {
+  id               String    @id @default(cuid())
+  nameEn           String
+  nameAr           String?
+  crNumber         String?
+  vatNumber        String?
+  addressLine      String?
+  city             String?
+  postalCode       String?
+  country          String    @default("SA")
+  currency         String    @default("SAR")
+  bankName         String?
+  bankAccountName  String?
+  iban             String?
+  setupCompletedAt DateTime?
+  archivedAt       DateTime?
+  createdById      String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  createdBy    User              @relation("OrganizationCreatedBy", fields: [createdById], references: [id])
+  memberships  Membership[]
+  invitations  Invitation[]
+  subscription Subscription?
+  auditLogs    AuditLog[]
+  logo         OrganizationLogo?
+
+  @@map("organizations")
+}
+
+model OrganizationLogo {
+  organizationId String   @id
+  data           Bytes
+  mimeType       String
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_logos")
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("memberships")
+}
+
+/// RLS
+model Invitation {
+  id             String    @id @default(cuid())
+  organizationId String
+  email          String
+  role           Role
+  tokenHash      String    @unique
+  invitedById    String
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("invitations")
+}
+
+/// RLS
+model Subscription {
+  id               String             @id @default(cuid())
+  organizationId   String             @unique
+  status           SubscriptionStatus
+  planCode         String?
+  billingCycle     BillingCycle?
+  trialEndsAt      DateTime
+  currentPeriodEnd DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+/// RLS
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}
+
+model RateLimit {
+  key         String   @id
+  count       Int
+  windowStart DateTime
+
+  @@map("rate_limits")
+}

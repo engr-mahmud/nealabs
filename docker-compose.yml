@@ -1,0 +1,32 @@
+# Production-style stack for a single VPS: PostgreSQL + app.
+# Put a reverse proxy with HTTPS (Caddy or Nginx) in front of port 3000.
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?set POSTGRES_ADMIN_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  migrate:
+    build: { context: ., target: migrate }
+    env_file: .env
+    depends_on: { db: { condition: service_healthy } }
+    profiles: ["tools"]
+
+  app:
+    build: { context: ., target: runner }
+    restart: unless-stopped
+    env_file: .env
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on: { db: { condition: service_healthy } }
+
+volumes:
+  pgdata:

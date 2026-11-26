@@ -1,0 +1,264 @@
+{
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "back": "Back",
+    "skip": "Skip for now",
+    "signOut": "Sign out",
+    "switchLanguage": "العربية",
+    "optional": "Optional",
+    "poweredBy": "Powered by {brand}",
+    "remove": "Remove",
+    "saved": "Saved",
+    "menu": "Menu",
+    "account": "Account"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "organization": "Company",
+    "members": "Team",
+    "billing": "Plan & billing",
+    "newOrganization": "Add another company",
+    "switchOrganization": "Switch company",
+    "currentOrganization": "Current company"
+  },
+  "home": {
+    "title": "Run your manpower company from one simple place",
+    "subtitle": "Invoices with QR, workforce records, timesheets and salary sheets, in English and Arabic.",
+    "cta": "Start 7-day free trial",
+    "noCard": "No card required",
+    "signIn": "Sign in"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Sign in",
+      "subtitle": "Welcome back. Enter your email and password.",
+      "submit": "Sign in",
+      "noAccount": "New here?",
+      "createAccount": "Start a free trial",
+      "forgot": "Forgot password?"
+    },
+    "signUp": {
+      "title": "Start your free trial",
+      "subtitle": "7 days free. No card required.",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "agree": "By creating an account you agree to the Terms and Privacy Policy."
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "Enter your account email and we will send you a reset link.",
+      "submit": "Send reset link",
+      "sent": "If an account exists for this email, a reset link is on its way. It works for 1 hour.",
+      "back": "Back to sign in"
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "submit": "Save new password",
+      "invalid": "This reset link is invalid or has expired. Please request a new one.",
+      "requestNew": "Request a new link"
+    },
+    "fields": {
+      "name": "Your name",
+      "email": "Email",
+      "password": "Password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password"
+    },
+    "passwordHint": "At least 8 characters."
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalid": "Please check this value.",
+    "invalidEmail": "Enter a valid email, for example name@company.com.",
+    "passwordTooShort": "Use at least 8 characters.",
+    "tooLong": "This is too long.",
+    "passwordsDoNotMatch": "The passwords do not match.",
+    "invalidCr": "CR number should be 10 digits.",
+    "invalidVat": "VAT number should be 15 digits, starting and ending with 3.",
+    "invalidPostalCode": "Postal code should be 5 digits.",
+    "invalidIban": "Enter a valid Saudi IBAN (SA followed by 22 digits)."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again. If it keeps happening, contact support.",
+    "unauthorized": "Your session has ended. Please sign in again.",
+    "forbidden": "Only the company owner can do this.",
+    "readOnly": "Your company is in read-only mode. Choose a plan to make changes again.",
+    "rateLimited": "Too many attempts. Please wait 15 minutes and try again.",
+    "notFound": "We could not find this item. It may have been removed.",
+    "emailTaken": "An account with this email already exists. Sign in instead, or reset your password.",
+    "invalidCredentials": "Email or password is incorrect.",
+    "resetTokenInvalid": "This reset link is invalid or has expired. Please request a new one.",
+    "alreadyMember": "This person is already in your team.",
+    "invitationEmailMismatch": "This invitation was sent to a different email. Sign in with the invited email.",
+    "lastOwner": "A company needs at least one owner.",
+    "logoTooLarge": "The logo is too large. Use an image under 512 KB.",
+    "logoInvalidType": "Use a PNG, JPG or WEBP image."
+  },
+  "onboarding": {
+    "stepOf": "Step {current} of {total}",
+    "step1": {
+      "title": "Your company name",
+      "subtitle": "This name appears on your invoices and documents. Your 7-day free trial starts now."
+    },
+    "step2": {
+      "title": "Registration details",
+      "subtitle": "Needed on tax invoices. You can add them later in Company settings."
+    },
+    "step3": {
+      "title": "Logo and bank details",
+      "subtitle": "Shown on invoices so clients know where to pay."
+    },
+    "finish": "Finish setup"
+  },
+  "org": {
+    "fields": {
+      "nameEn": "Company name (English)",
+      "nameAr": "Company name (Arabic)",
+      "crNumber": "CR number",
+      "vatNumber": "VAT number",
+      "addressLine": "Address",
+      "city": "City",
+      "postalCode": "Postal code",
+      "bankName": "Bank name",
+      "bankAccountName": "Account name",
+      "iban": "IBAN",
+      "currency": "Currency"
+    },
+    "hints": {
+      "vatNumber": "15 digits, as on your VAT certificate.",
+      "iban": "Starts with SA, 24 characters."
+    },
+    "settings": {
+      "title": "Company",
+      "subtitle": "Details printed on your invoices and documents.",
+      "company": "Company",
+      "legal": "Registration",
+      "bank": "Bank details",
+      "logo": "Logo",
+      "ownerOnly": "Only the owner can change company details."
+    },
+    "logo": {
+      "upload": "Upload logo",
+      "remove": "Remove logo",
+      "hint": "PNG, JPG or WEBP, up to 512 KB.",
+      "none": "No logo yet",
+      "choose": "Choose image",
+      "noFile": "No file chosen"
+    },
+    "new": {
+      "title": "Add another company",
+      "subtitle": "Each company has its own data, team and 7-day free trial.",
+      "submit": "Create company"
+    }
+  },
+  "members": {
+    "title": "Team",
+    "subtitle": "People who can work in this company.",
+    "you": "You",
+    "remove": "Remove",
+    "removeConfirm": "Remove {name} from this company? They will lose access immediately.",
+    "pending": "Pending invitations",
+    "expires": "Expires {date}",
+    "revoke": "Cancel invitation",
+    "roles": {
+      "OWNER": "Owner",
+      "ACCOUNTANT": "Accountant"
+    },
+    "roleHelp": {
+      "OWNER": "Full access, including company settings, team and billing.",
+      "ACCOUNTANT": "Clients, invoices, workforce, salaries and finance. No settings or billing."
+    },
+    "invite": {
+      "title": "Invite a team member",
+      "email": "Their email",
+      "role": "Role",
+      "submit": "Send invitation",
+      "sent": "Invitation sent to {email}."
+    }
+  },
+  "invite": {
+    "title": "Join {org}",
+    "subtitle": "You have been invited as {role}.",
+    "accept": "Accept invitation",
+    "signInToAccept": "Sign in to accept",
+    "signUpToAccept": "Create an account to accept",
+    "signedInAs": "Signed in as {email}",
+    "invalid": "This invitation is invalid, has expired, or was already used. Ask the company owner to send a new one.",
+    "goHome": "Go to dashboard"
+  },
+  "trial": {
+    "banner": "Free trial: {days, plural, one {# day} other {# days}} left.",
+    "choosePlan": "Choose a plan",
+    "readOnlyTitle": "Read-only mode",
+    "readOnlyBody": "Your trial or subscription has ended. Your data is safe and you can still view and export it. Choose a plan to make changes again.",
+    "pastDue": "Your last payment did not go through. Please update your payment to avoid read-only mode.",
+    "exportData": "Export data"
+  },
+  "billing": {
+    "title": "Plan & billing",
+    "subtitle": "Your current plan and trial.",
+    "status": {
+      "trialing": "Free trial",
+      "active": "Active",
+      "past_due": "Payment due",
+      "expired": "Read-only"
+    },
+    "trialEnds": "Trial ends on {date}.",
+    "endedOn": "Ended on {date}.",
+    "renewsOn": "Renews on {date}.",
+    "plans": "Plans",
+    "perMonth": "/ month",
+    "exVat": "Prices exclude 15% VAT.",
+    "workersUpTo": "Up to {count} workers",
+    "invoicesUpTo": "Up to {count} invoices a month",
+    "planNames": {
+      "STARTER": "Starter",
+      "PRO": "Pro",
+      "BUSINESS": "Business"
+    },
+    "comingSoon": "Online card and mada payment is coming soon. To subscribe today, message us on WhatsApp.",
+    "whatsapp": "Subscribe on WhatsApp",
+    "ownerOnly": "Only the owner can manage billing."
+  },
+  "dashboard": {
+    "welcome": "Welcome, {name}",
+    "subtitle": "Here is what to do next.",
+    "setup": {
+      "title": "Finish setting up your company",
+      "progress": "{done} of {total} done",
+      "company": "Company name",
+      "legal": "CR and VAT numbers",
+      "logo": "Company logo",
+      "bank": "Bank details",
+      "team": "Invite your accountant"
+    },
+    "next": {
+      "title": "Coming next",
+      "body": "Clients, sites, workforce, invoices and salary sheets will appear here."
+    }
+  },
+  "export": {
+    "button": "Export data",
+    "help": "Download all your company data. Always available, even in read-only mode."
+  },
+  "email": {
+    "reset": {
+      "subject": "Reset your password",
+      "heading": "Reset your password",
+      "body": "Hi {name}, use the button below to choose a new password. The link works for 1 hour.",
+      "cta": "Choose a new password",
+      "footer": "If you did not ask for this, you can ignore this email. Your password will not change."
+    },
+    "invite": {
+      "subject": "{inviter} invited you to {org}",
+      "heading": "Join {org}",
+      "body": "{inviter} invited you to join {org} as {role}. The invitation works for 7 days.",
+      "cta": "Accept invitation",
+      "footer": "If you were not expecting this, you can ignore this email."
+    }
+  }
+}
