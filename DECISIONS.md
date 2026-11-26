@@ -18,6 +18,9 @@ Short record of choices made, with the reason. Update when a decision changes.
 - Reset links: single use, 1 hour, previous links cancelled when a new one is requested. The "forgot password" answer is identical whether the email exists or not.
 - Rate limits are stored in PostgreSQL (works on Vercel and on one VPS without Redis): login 10 per email and 30 per IP per 15 min; sign-up 10 per IP per hour; reset 3 per email per hour.
 - CSRF: Next.js Server Actions check the Origin header; cookies are SameSite=Lax; the only GET endpoints (export, logo) do not change data.
+- **Phone verification is required** (owner decision, 2026-11-26). Sign-up asks for a Saudi mobile; a 6-digit SMS code must be entered before any company can be created or joined. Codes: random, stored hashed, valid 10 minutes, 5 wrong tries then a new code is needed, 60-second resend wait. SMS sending is limited to 5 per account and per number and 20 per IP each hour, because SMS costs money.
+- The number entered at sign-up is kept as `pendingPhone` (not unique) and only becomes the account's `phone` (unique) after the code is verified. So nobody can block a number they do not own by typing it first.
+- Only Saudi mobile numbers (+9665XXXXXXXX) are accepted for now. Arabic digits and formats like 05..., +966..., 00966... are all accepted.
 - Not in MVP: email verification, 2FA, "remember me" choice, social login. Open question below.
 
 ## Multi-tenancy
@@ -33,7 +36,8 @@ Short record of choices made, with the reason. Update when a decision changes.
 - Permissions live in one map: `src/features/organizations/permissions.ts`.
 
 ## Trial and read-only mode
-- Every new organization gets a 7-day trial (`TRIAL_DAYS`), no card. One user can own several organizations; **each organization gets its own trial** (see open questions).
+- **One 7-day free trial per account with a new email and a new verified mobile number** (owner decision, 2026-11-26). No card needed. The trial starts when the account creates its first company; companies the same account adds later share the same end date (they do not get a new 7 days).
+- Reuse is blocked twice: the verified phone and the email are unique per account, and every trial is also recorded in `trial_claims` (phone and email). A number or email found there gets no new trial, even if the old account is removed in future. Such a company starts in read-only mode with the "Choose a plan" prompt.
 - Access is **computed from the subscription and the clock** on every request (`computeAccess`), so read-only starts the moment the trial ends, without a cron job.
 - Read-only blocks all writes (`assertCan`) but always allows viewing, **data export**, and billing (so the owner can subscribe again). Data is never deleted.
 - `PAST_DUE` keeps working for 3 days after the period end, then read-only. `CANCELED` works until the paid period ends.
@@ -50,6 +54,10 @@ Short record of choices made, with the reason. Update when a decision changes.
 - Plan or cycle changes: apply at next renewal (no proration) unless the gateway makes proration simple. Decide in step 7.
 - Until payments are live, the billing page links to WhatsApp.
 
+## SMS
+- One `sendSms()` function behind `SMS_TRANSPORT`: `console` (development, prints the code in the server log), `unifonic` (default choice for production: Saudi provider with local sender name support) or `twilio` (fallback). Switching provider is an env change.
+- Saudi Arabia requires a registered SMS sender name, done through the provider. The Unifonic request format in `src/lib/sms.ts` must be checked against Unifonic's current API docs with a real account before launch; it has not been tested against the live service.
+
 ## Email
 - `nodemailer` over SMTP, so any provider works (portable). `EMAIL_TRANSPORT=console` prints emails to the server log for local development only.
 
@@ -61,8 +69,9 @@ Short record of choices made, with the reason. Update when a decision changes.
 - `npm audit` reports a high-severity advisory in `effect`, pulled in by the Prisma CLI (`prisma` dev dependency, config parsing). It is not part of the running app. Re-check when Prisma releases a fix.
 
 ## Open questions
-1. Should each new company get a fresh 7-day trial, or only the user's first company? (Current: every company.)
-2. Email verification on sign-up: required before first invoice, or not at all for MVP?
-3. Which SMTP provider for production email (needs a sending domain)?
-4. Final product name and brand color.
-5. Plan limits (workers, invoices) and SAR prices.
+1. ~~Trial per company or per user?~~ Answered: one trial per new email + phone, verified by SMS.
+2. SMS provider account: Unifonic (recommended) or Twilio, plus a registered sender name.
+3. Email verification on sign-up: required before first invoice, or not at all for MVP?
+4. Which SMTP provider for production email (needs a sending domain)?
+5. Final product name and brand color.
+6. Plan limits (workers, invoices) and SAR prices.

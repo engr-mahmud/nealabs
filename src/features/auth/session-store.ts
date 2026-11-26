@@ -15,7 +15,7 @@ export async function createSessionRecord(userId: string, activeOrganizationId?:
 export async function findValidSession(token: string) {
   const session = await prisma.session.findUnique({
     where: { tokenHash: hashToken(token) },
-    include: { user: { select: { id: true, email: true, name: true, locale: true } } },
+    include: { user: { select: { id: true, email: true, name: true, locale: true, phoneVerifiedAt: true } } },
   });
   if (!session) return null;
   if (session.expiresAt.getTime() <= Date.now()) {

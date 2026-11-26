@@ -11,17 +11,37 @@ import type { CompanyNameInput, OrganizationUpdate } from "./schemas";
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Creates an organization owned by the user and starts its free trial. */
+/**
+ * Creates an organization owned by the user. The free trial belongs to the
+ * account: it starts with the first company, and later companies share the same
+ * end date. A phone number or email that already had a trial gets none.
+ */
 export async function createOrganization(userId: string, input: CompanyNameInput, now = new Date()) {
   return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { email: true, phone: true, phoneVerifiedAt: true, trialEndsAt: true },
+    });
+    if (!user.phone || !user.phoneVerifiedAt) throw new AppError("phoneNotVerified");
+
+    let trialEndsAt = user.trialEndsAt;
+    if (!trialEndsAt) {
+      const claimed = await tx.trialClaim.findFirst({ where: { OR: [{ phone: user.phone }, { email: user.email }] } });
+      if (claimed) {
+        trialEndsAt = now; // no new trial: starts read-only with a prompt to subscribe
+      } else {
+        await tx.trialClaim.create({ data: { phone: user.phone, email: user.email, userId } });
+        trialEndsAt = trialEndDate(now, env().TRIAL_DAYS);
+      }
+      await tx.user.update({ where: { id: userId }, data: { trialEndsAt } });
+    }
+
     const org = await tx.organization.create({
       data: { nameEn: input.nameEn, nameAr: input.nameAr ?? null, createdById: userId },
     });
     await tx.membership.create({ data: { userId, organizationId: org.id, role: "OWNER" } });
     await setTenant(tx, org.id);
-    await tx.subscription.create({
-      data: { organizationId: org.id, status: "TRIALING", trialEndsAt: trialEndDate(now, env().TRIAL_DAYS) },
-    });
+    await tx.subscription.create({ data: { organizationId: org.id, status: "TRIALING", trialEndsAt } });
     await writeAudit(tx, { organizationId: org.id, userId, action: "organization.created", entityType: "Organization", entityId: org.id });
     return org;
   });

@@ -1,8 +1,8 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { UnauthorizedError } from "@/lib/errors";
-import { getSession, requireSession } from "@/features/auth/session";
+import { AppError, UnauthorizedError } from "@/lib/errors";
+import { getSession, requireVerifiedSession } from "@/features/auth/session";
 import { loadOrgContext, type OrgContext } from "./context";
 
 /**
@@ -34,7 +34,7 @@ const resolveCached = cache(async () => {
 
 /** For pages and layouts: redirects to sign-in or onboarding when needed. */
 export async function requireOrgPage() {
-  await requireSession();
+  await requireVerifiedSession();
   const { session, ctx } = await resolveCached();
   if (!session) redirect("/sign-in");
   if (!ctx) redirect("/onboarding");
@@ -44,6 +44,8 @@ export async function requireOrgPage() {
 /** For server actions and route handlers: throws instead of redirecting. */
 export async function requireOrgAction(): Promise<OrgContext & { sessionId: string }> {
   const { session, ctx } = await resolveCached();
-  if (!session || !ctx) throw new UnauthorizedError();
+  if (!session) throw new UnauthorizedError();
+  if (!session.user.phoneVerifiedAt) throw new AppError("phoneNotVerified");
+  if (!ctx) throw new UnauthorizedError();
   return { ...ctx, sessionId: session.id };
 }

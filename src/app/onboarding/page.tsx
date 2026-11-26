@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { LanguageSwitch } from "@/components/layout/language-switch";
-import { requireSession } from "@/features/auth/session";
+import { requireVerifiedSession } from "@/features/auth/session";
 import { skipSetupAction } from "@/features/organizations/actions";
 import { loadOrgContext } from "@/features/organizations/context";
 import { CompanyNameStep, FinalStep, LegalStep } from "@/features/organizations/components/onboarding-forms";
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Setup" };
 const TOTAL = 3;
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
-  const session = await requireSession();
+  const session = await requireVerifiedSession();
   const t = await getTranslations();
   const orgs = await listUserOrganizations(session.userId);
 

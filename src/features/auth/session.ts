@@ -38,3 +38,10 @@ export async function requireSession() {
   if (!session) redirect("/sign-in");
   return session;
 }
+
+/** Signed in and phone verified; otherwise sends the user to the right step. */
+export async function requireVerifiedSession(next?: string) {
+  const session = await requireSession();
+  if (!session.user.phoneVerifiedAt) redirect(next ? `/verify-phone?next=${encodeURIComponent(next)}` : "/verify-phone");
+  return session;
+}

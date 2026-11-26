@@ -16,8 +16,8 @@ async function main() {
     return;
   }
   const passwordHash = await hashPassword("demo12345");
-  const owner = await prisma.user.create({ data: { name: "Demo Owner", email: "owner@demo.test", passwordHash } });
-  const accountant = await prisma.user.create({ data: { name: "Demo Accountant", email: "accountant@demo.test", passwordHash } });
+  const owner = await prisma.user.create({ data: { name: "Demo Owner", email: "owner@demo.test", phone: "+966500000001", phoneVerifiedAt: new Date(), passwordHash } });
+  const accountant = await prisma.user.create({ data: { name: "Demo Accountant", email: "accountant@demo.test", phone: "+966500000002", phoneVerifiedAt: new Date(), passwordHash } });
 
   const org = await createOrganization(owner.id, { nameEn: "Demo Manpower Co", nameAr: "شركة ديمو لتوريد العمالة" });
   await prisma.organization.update({

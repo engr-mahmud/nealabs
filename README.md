@@ -3,10 +3,11 @@
 Subscription business software for manpower supply, contracting and supply companies in Saudi Arabia.
 English and Arabic (RTL), multi-company, 7-day free trial.
 
-**Status:** step 1 of 7 done: auth, organizations, roles, trial and read-only mode.
+**Status:** step 1 of 7 done: auth with SMS phone verification, organizations, roles, trial and read-only mode.
 
 ## What works now
-- Sign up, sign in, sign out, forgot/reset password (rate limited).
+- Sign up with email and Saudi mobile, 6-digit SMS code to verify the phone, sign in, sign out, forgot/reset password (rate limited).
+- One 7-day free trial per new email + phone number; reused numbers or emails get no new trial.
 - 3-step setup wizard: company name → CR, VAT, address → logo and bank details.
 - Several companies per user, company switcher, each with its own 7-day trial.
 - Team: invite by email as Owner or Accountant, accept invitation, remove member.
@@ -27,7 +28,7 @@ npm run dev                        # http://localhost:3000
 
 Demo logins after seeding: `owner@demo.test` / `demo12345` (Owner) and `accountant@demo.test` / `demo12345` (Accountant).
 
-In development, emails (reset links, invitations) are printed in the terminal (`EMAIL_TRANSPORT=console`).
+In development, emails (reset links, invitations) and SMS codes are printed in the terminal (`EMAIL_TRANSPORT=console`, `SMS_TRANSPORT=console`).
 
 ### Database role (important)
 
@@ -49,6 +50,9 @@ The app logs `[security] ... Row Level Security is NOT enforced` at startup if t
 | `EMAIL_TRANSPORT` | yes | `smtp` in production, `console` for local development |
 | `EMAIL_FROM` | yes | Sender, e.g. `Company <no-reply@example.com>` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | with smtp | SMTP server credentials |
+| `SMS_TRANSPORT` | yes | `unifonic` or `twilio` in production, `console` for local development |
+| `UNIFONIC_APP_SID`, `UNIFONIC_SENDER_ID` | with unifonic | Unifonic app ID and registered sender name |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | with twilio | Twilio credentials; `TWILIO_FROM` is a number or Messaging Service SID |
 | `TRIAL_DAYS` | no | Free trial length, default `7` |
 
 ## Tests
@@ -59,7 +63,7 @@ DATABASE_URL=<test url> npx prisma migrate deploy
 npm test
 ```
 
-Covers: tenant isolation (RLS and service layer), trial expiry and read-only mode, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
+Covers: tenant isolation (RLS and service layer), trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
 
 Other checks: `npm run typecheck`, `npm run lint`, `npm run build`.
 

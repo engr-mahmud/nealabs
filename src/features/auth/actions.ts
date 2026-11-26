@@ -12,6 +12,7 @@ import { localeDir, isLocale } from "@/i18n/config";
 import { forgotPasswordSchema, resetPasswordSchema, safeNextPath, signInSchema, signUpSchema } from "./schemas";
 import { authenticate, createPasswordResetToken, registerUser, resetPassword } from "./service";
 import { endSession, startSession } from "./session";
+import { sendVerificationSms } from "./phone-sms";
 
 const FIFTEEN_MIN = 15 * 60;
 
@@ -23,10 +24,12 @@ export async function signUpAction(_prev: ActionState | null, formData: FormData
     const locale = await getLocale();
     const user = await registerUser({ ...data, locale: isLocale(locale) ? locale : "en" });
     await startSession(user.id);
+    await sendVerificationSms(user.id);
   } catch (e) {
     return actionError(e, formData);
   }
-  redirect(safeNextPath(formData.get("next")) ?? "/onboarding");
+  const next = safeNextPath(formData.get("next"));
+  redirect(next ? `/verify-phone?next=${encodeURIComponent(next)}` : "/verify-phone");
 }
 
 export async function signInAction(_prev: ActionState | null, formData: FormData): Promise<ActionState> {

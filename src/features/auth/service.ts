@@ -3,14 +3,23 @@ import { generateToken, hashToken } from "@/lib/crypto";
 import { AppError } from "@/lib/errors";
 import { fakeVerify, hashPassword, verifyPassword } from "./password";
 import { deleteAllSessionsForUser } from "./session-store";
+import { isPhoneTaken } from "./phone-verification";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
-export async function registerUser(input: { name: string; email: string; password: string; locale: string }) {
+/** Creates an account. The phone stays pending until the SMS code is verified. */
+export async function registerUser(input: { name: string; email: string; phone: string; password: string; locale: string }) {
   const existing = await prisma.user.findUnique({ where: { email: input.email }, select: { id: true } });
   if (existing) throw new AppError("emailTaken");
+  if (await isPhoneTaken(input.phone)) throw new AppError("phoneTaken");
   return prisma.user.create({
-    data: { name: input.name, email: input.email, passwordHash: await hashPassword(input.password), locale: input.locale },
+    data: {
+      name: input.name,
+      email: input.email,
+      pendingPhone: input.phone,
+      passwordHash: await hashPassword(input.password),
+      locale: input.locale,
+    },
     select: { id: true, email: true, name: true },
   });
 }

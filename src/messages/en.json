@@ -66,9 +66,11 @@
       "email": "Email",
       "password": "Password",
       "newPassword": "New password",
-      "confirmPassword": "Confirm new password"
+      "confirmPassword": "Confirm new password",
+      "phone": "Mobile number"
     },
-    "passwordHint": "At least 8 characters."
+    "passwordHint": "At least 8 characters.",
+    "phoneHint": "Saudi mobile, for example 05X XXX XXXX. We will send a 6-digit code."
   },
   "validation": {
     "required": "This field is required.",
@@ -80,7 +82,9 @@
     "invalidCr": "CR number should be 10 digits.",
     "invalidVat": "VAT number should be 15 digits, starting and ending with 3.",
     "invalidPostalCode": "Postal code should be 5 digits.",
-    "invalidIban": "Enter a valid Saudi IBAN (SA followed by 22 digits)."
+    "invalidIban": "Enter a valid Saudi IBAN (SA followed by 22 digits).",
+    "invalidPhone": "Enter a Saudi mobile number, for example 0512345678.",
+    "invalidCode": "Enter the 6-digit code."
   },
   "errors": {
     "generic": "Something went wrong. Please try again. If it keeps happening, contact support.",
@@ -96,7 +100,16 @@
     "invitationEmailMismatch": "This invitation was sent to a different email. Sign in with the invited email.",
     "lastOwner": "A company needs at least one owner.",
     "logoTooLarge": "The logo is too large. Use an image under 512 KB.",
-    "logoInvalidType": "Use a PNG, JPG or WEBP image."
+    "logoInvalidType": "Use a PNG, JPG or WEBP image.",
+    "invalidPhone": "Enter a Saudi mobile number, for example 0512345678.",
+    "phoneTaken": "This mobile number is already used by another account. Sign in to that account instead.",
+    "phoneAlreadyVerified": "Your mobile number is already verified.",
+    "codeInvalid": "That code is not correct. Check the SMS and try again.",
+    "codeExpired": "This code has expired. Tap \"Send a new code\".",
+    "codeTooManyAttempts": "Too many wrong tries. Tap \"Send a new code\".",
+    "codeCooldown": "Please wait a minute before asking for a new code.",
+    "phoneNotVerified": "Please verify your mobile number first.",
+    "smsFailed": "We could not send the SMS. Check the number and try again in a minute."
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
@@ -260,5 +273,21 @@
       "cta": "Accept invitation",
       "footer": "If you were not expecting this, you can ignore this email."
     }
+  },
+  "verify": {
+    "title": "Verify your mobile number",
+    "subtitle": "Enter the 6-digit code we sent to {phone}.",
+    "code": "6-digit code",
+    "submit": "Verify",
+    "resend": "Send a new code",
+    "sent": "A new code is on its way.",
+    "noCode": "Your code expired or was not sent. Send a new one to {phone}.",
+    "change": "Wrong number? Change it",
+    "enterPhone": "Enter your mobile number to receive a 6-digit code.",
+    "sendCode": "Send code",
+    "verifyFirst": "Verify your mobile number to continue"
+  },
+  "sms": {
+    "code": "{brand} code: {code}. Valid for 10 minutes. Do not share it with anyone."
   }
 }

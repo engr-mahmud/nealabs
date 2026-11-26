@@ -36,12 +36,20 @@ model User {
   name         String
   passwordHash String
   locale       String   @default("en")
+  /// Verified mobile in E.164 (+9665XXXXXXXX). Unique: one phone number is one account.
+  phone           String?   @unique
+  phoneVerifiedAt DateTime?
+  /// Number entered at sign-up, not yet verified. Not unique, so nobody can block a number they do not own.
+  pendingPhone    String?
+  /// End of this account's free trial; set when the first company is created.
+  trialEndsAt     DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   memberships   Membership[]
   sessions      Session[]
   resetTokens   PasswordResetToken[]
+  phoneCodes    PhoneVerificationCode[]
   organizations Organization[] @relation("OrganizationCreatedBy")
 
   @@map("users")
@@ -191,4 +199,31 @@ model RateLimit {
   windowStart DateTime
 
   @@map("rate_limits")
+}
+
+model PhoneVerificationCode {
+  id        String    @id @default(cuid())
+  userId    String
+  phone     String
+  codeHash  String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("phone_verification_codes")
+}
+
+/// One free trial per phone number and per email, kept even if an account is removed later.
+model TrialClaim {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  email     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@map("trial_claims")
 }

@@ -37,7 +37,11 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                 <h1 className="text-2xl font-semibold text-slate-900">{t("invite.title", { org: orgDisplayName(invitation.organization, locale) })}</h1>
                 <p className="text-slate-600">{t("invite.subtitle", { role: t(`members.roles.${invitation.role}`) })}</p>
               </div>
-              {session ? (
+              {session && !session.user.phoneVerifiedAt ? (
+                <ButtonLink href={`/verify-phone?next=${encodeURIComponent(next)}`} size="lg" className="w-full">
+                  {t("verify.verifyFirst")}
+                </ButtonLink>
+              ) : session ? (
                 <>
                   <p className="text-sm text-slate-500">{t("invite.signedInAs", { email: session.user.email })}</p>
                   <AcceptInviteForm token={token} />

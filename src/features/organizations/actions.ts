@@ -29,6 +29,7 @@ import {
 async function requireSessionAction() {
   const session = await getSession();
   if (!session) throw new UnauthorizedError();
+  if (!session.user.phoneVerifiedAt) throw new AppError("phoneNotVerified");
   return session;
 }
 

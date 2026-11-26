@@ -9,15 +9,28 @@ if (!process.env.DATABASE_URL?.includes("test")) {
 
 export async function resetDb() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE audit_logs, subscriptions, invitations, organization_logos, memberships, organizations, password_reset_tokens, sessions, users, rate_limits CASCADE',
+    'TRUNCATE TABLE trial_claims, phone_verification_codes, audit_logs, subscriptions, invitations, organization_logos, memberships, organizations, password_reset_tokens, sessions, users, rate_limits CASCADE',
   );
 }
 
 let counter = 0;
+let phoneCounter = 0;
+/** A unique, valid Saudi mobile in E.164 for each call. */
+export function uniquePhone() {
+  phoneCounter += 1;
+  return `+9665${String(Date.now() % 1_000_000).padStart(6, "0").slice(0, 4)}${String(phoneCounter).padStart(4, "0")}`;
+}
+
 export async function createUser(name = "User", password = "password123") {
   counter += 1;
   return prisma.user.create({
-    data: { name, email: `user${counter}-${Date.now()}@example.com`, passwordHash: await hashPassword(password) },
+    data: {
+      name,
+      email: `user${counter}-${Date.now()}@example.com`,
+      phone: uniquePhone(),
+      phoneVerifiedAt: new Date(),
+      passwordHash: await hashPassword(password),
+    },
   });
 }
 

@@ -79,6 +79,19 @@ export function SignUpForm({ next, defaultEmail }: { next?: string; defaultEmail
         error={state?.fieldErrors?.email}
       />
       <Field
+        label={t("fields.phone")}
+        name="phone"
+        type="tel"
+        autoComplete="tel"
+        inputMode="tel"
+        placeholder="05X XXX XXXX"
+        ltr
+        required
+        hint={t("phoneHint")}
+        defaultValue={state?.values?.phone}
+        error={state?.fieldErrors?.phone}
+      />
+      <Field
         label={t("fields.password")}
         name="password"
         type="password"

@@ -10,6 +10,12 @@ const schema = z.object({
   SMTP_PORT: z.coerce.number().int().default(587),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
+  SMS_TRANSPORT: z.enum(["console", "unifonic", "twilio"]).default("console"),
+  UNIFONIC_APP_SID: z.string().optional(),
+  UNIFONIC_SENDER_ID: z.string().optional(),
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_FROM: z.string().optional(),
   TRIAL_DAYS: z.coerce.number().int().min(1).max(60).default(7),
 });
 
