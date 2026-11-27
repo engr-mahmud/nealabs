@@ -44,15 +44,17 @@ export async function savePayrollSettings(ctx: OrgContext, input: SettingsInput)
 export interface SheetListQuery {
   q: string;
   year: number | null;
-  status: SalarySheetStatus | "";
+  /** UNPAID = approved but not every worker marked as paid. */
+  status: SalarySheetStatus | "UNPAID" | "";
   page: number;
 }
 
 export async function listSheets(ctx: OrgContext, query: SheetListQuery) {
   assertCan(ctx, "data.read");
+  const db = tenantDb(ctx.organizationId);
   const where: Prisma.SalarySheetWhereInput = {
     ...(query.year ? { year: query.year } : {}),
-    ...(query.status ? { status: query.status } : {}),
+    ...(query.status === "UNPAID" ? { status: "APPROVED", paidNet: { lt: db.salarySheet.fields.totalNet } } : query.status ? { status: query.status } : {}),
     ...(query.q
       ? {
           OR: [
@@ -64,7 +66,6 @@ export async function listSheets(ctx: OrgContext, query: SheetListQuery) {
       : {}),
   };
   const take = payrollConfig.pageSize;
-  const db = tenantDb(ctx.organizationId);
   const [items, total, years] = await Promise.all([
     db.salarySheet.findMany({
       where,
