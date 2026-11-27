@@ -33,7 +33,8 @@
     "clients": "Clients",
     "sites": "Sites",
     "workforce": "Workforce",
-    "sales": "Sales"
+    "sales": "Sales",
+    "finance": "Finance"
   },
   "home": {
     "title": "Run your manpower company from one simple place",
@@ -116,7 +117,10 @@
     "tooManyLines": "Too many items. Split them into two documents.",
     "invalidPercent": "Enter a percent between 0 and 100.",
     "dueBeforeIssue": "This date must be on or after the document date.",
-    "paymentTooLarge": "This is more than the balance due. Check the amount."
+    "paymentTooLarge": "This is more than the balance due. Check the amount.",
+    "chooseCategory": "Choose a category.",
+    "categoryExists": "A category with this name already exists.",
+    "refundTooLarge": "This is more than the amount owed to the client."
   },
   "errors": {
     "generic": "Something went wrong. Please try again. If it keeps happening, contact support.",
@@ -156,7 +160,11 @@
     "issueBeforePayment": "Issue the invoice first, then record payments.",
     "qrValueTooLong": "Your company name is too long for the invoice QR code. Shorten the name in Company settings.",
     "creditTooLarge": "This credit note is more than what is left to credit on the invoice. Lower the amounts.",
-    "creditNeedsIssuedInvoice": "A credit note can only be made for an issued tax invoice."
+    "creditNeedsIssuedInvoice": "A credit note can only be made for an issued tax invoice.",
+    "entryAutomatic": "This entry is created automatically. Change it where it comes from (the invoice or salary sheet).",
+    "entryVoided": "This entry is voided and can no longer be changed.",
+    "categoryLocked": "This category is used by the app and cannot be archived. You can rename it.",
+    "paymentHasRefund": "A refund on this invoice depends on this payment. Void the refund in Finance first, then remove the payment."
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
@@ -703,7 +711,8 @@
       "converted": "Converted. Check the details below.",
       "paid": "Payment recorded.",
       "paymentDeleted": "Payment removed.",
-      "deleted": "Draft deleted."
+      "deleted": "Draft deleted.",
+      "refund": "Refund recorded. It is saved in Finance as negative income."
     },
     "payments": {
       "title": "Payments",
@@ -743,6 +752,162 @@
       "pickInvoiceTitle": "Start from an invoice",
       "pickInvoiceBody": "A credit note always corrects an issued tax invoice. Open the invoice and choose \"Create credit note\".",
       "goToInvoices": "Go to invoices"
+    }
+  },
+  "finance": {
+    "title": "Finance",
+    "tabs": {
+      "transactions": "Income & expenses",
+      "reports": "Reports",
+      "categories": "Categories"
+    },
+    "subtitle": "Money in and out. Invoice payments are added automatically.",
+    "addIncome": "Add income",
+    "addExpense": "Add expense",
+    "newIncome": "New income",
+    "newExpense": "New expense",
+    "editTitle": "Edit entry",
+    "searchPlaceholder": "Search description, reference, client or site",
+    "kinds": {
+      "INCOME": "Income",
+      "EXPENSE": "Expense"
+    },
+    "kindFilter": {
+      "all": "All",
+      "INCOME": "Income",
+      "EXPENSE": "Expenses"
+    },
+    "allCategories": "All categories",
+    "allSites": "All sites",
+    "noSite": "No site (company overhead)",
+    "voided": "Voided",
+    "showVoided": "Show voided",
+    "hideVoided": "Back to active entries",
+    "totals": {
+      "income": "Income",
+      "expense": "Expenses",
+      "net": "Net",
+      "inclVat": "incl. VAT"
+    },
+    "emptyTitle": "No income or expenses yet",
+    "emptyBody": "Payments you record on invoices appear here by themselves. Add expenses like rent, food or transport to see your real profit.",
+    "noResults": "Nothing matches these filters.",
+    "clearFilters": "Clear filters",
+    "sources": {
+      "MANUAL": "Entered by hand",
+      "INVOICE_PAYMENT": "Invoice payment",
+      "INVOICE_REFUND": "Refund to client",
+      "SALARY_SHEET": "Salary sheet"
+    },
+    "fields": {
+      "amount": "Amount (SAR)",
+      "includesVat": "This amount includes 15% VAT",
+      "vatPreview": "VAT {vat} · without VAT {net}",
+      "categoryId": "Category",
+      "date": "Date",
+      "siteId": "Site",
+      "siteHint": "Choose a site to see it in the site profit report.",
+      "method": "Paid by",
+      "description": "Description",
+      "reference": "Reference",
+      "referenceHint": "e.g. receipt or transfer number",
+      "more": "More details",
+      "noMethod": "Not set",
+      "client": "Client",
+      "vat": "VAT",
+      "net": "Without VAT",
+      "createdBy": "Recorded",
+      "voidReason": "Reason",
+      "source": "Source"
+    },
+    "save": {
+      "INCOME": "Save income",
+      "EXPENSE": "Save expense"
+    },
+    "done": {
+      "saved": "Saved.",
+      "voided": "Entry voided. It no longer counts in totals and reports.",
+      "refund": "Refund recorded as negative income."
+    },
+    "auto": {
+      "INVOICE_PAYMENT": "This income was added automatically from a payment on invoice {number}. To change it, change the payment on the invoice.",
+      "INVOICE_REFUND": "This is money paid back to the client on invoice {number}.",
+      "SALARY_SHEET": "This expense comes from an approved salary sheet."
+    },
+    "openInvoice": "Open invoice",
+    "void": {
+      "button": "Void entry",
+      "title": "Entered by mistake?",
+      "body": "Voiding removes it from totals and reports. It stays visible under \"Show voided\" for your records.",
+      "confirm": "Void this entry?",
+      "confirmButton": "Void",
+      "reasonPlaceholder": "Optional, e.g. entered twice"
+    },
+    "voidedOn": "Voided on {date}",
+    "export": "Export to Excel",
+    "categories": {
+      "title": "Categories",
+      "subtitle": "Group your income and expenses. Archived categories keep their old entries.",
+      "income": "Income categories",
+      "expense": "Expense categories",
+      "add": "Add category",
+      "kind": "Type",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "entries": "{count, plural, =0 {No entries} one {# entry} other {# entries}}",
+      "locked": "Used by the app",
+      "rename": "Rename",
+      "added": "Category added."
+    },
+    "reports": {
+      "title": "Reports",
+      "subtitle": "Cash basis: money received and paid in the period. Amounts are without VAT.",
+      "period": "Period",
+      "presets": {
+        "this-month": "This month",
+        "last-month": "Last month",
+        "this-quarter": "This quarter",
+        "this-year": "This year",
+        "last-year": "Last year",
+        "all": "All time",
+        "custom": "Custom"
+      },
+      "from": "From",
+      "to": "To",
+      "apply": "Show",
+      "income": "Income",
+      "expense": "Expenses",
+      "profit": "Profit",
+      "loss": "Loss",
+      "margin": "Margin {percent}",
+      "byCategory": "By category",
+      "noIncome": "No income in this period.",
+      "noExpense": "No expenses in this period.",
+      "vatTitle": "VAT in these entries",
+      "vatCollected": "VAT on income",
+      "vatPaid": "VAT on expenses",
+      "vatNet": "Difference",
+      "vatNote": "For a quick check only. Your VAT return must follow ZATCA rules (accrual dates, all invoices issued), so confirm with your accountant.",
+      "sites": "Profit by site",
+      "sitesSubtitle": "Income from invoice payments and entries for each site, minus that site's expenses (salaries, accommodation, transport…).",
+      "site": "Site",
+      "overhead": "Company overhead (no site)",
+      "total": "Total",
+      "emptyTitle": "No entries in this period",
+      "emptyBody": "Record payments on invoices or add expenses, then come back for your profit.",
+      "seeEntries": "See entries"
+    },
+    "refund": {
+      "title": "Money owed back to the client",
+      "body": "Paid and credited together are more than the invoice total. When you pay the client back, record it here. It is saved as negative income.",
+      "due": "{amount} to pay back",
+      "amount": "Refund amount (SAR)",
+      "date": "Date paid",
+      "method": "Paid by",
+      "reference": "Reference",
+      "add": "Record refund",
+      "list": "Refunds",
+      "refunded": "Refunded {amount}"
     }
   }
 }

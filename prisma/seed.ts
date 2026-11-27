@@ -9,7 +9,8 @@ import { createOrganization } from "../src/features/organizations/service";
 import { loadOrgContext } from "../src/features/organizations/context";
 import { createClient } from "../src/features/clients/service";
 import { createSite } from "../src/features/sites/service";
-import { addPayment, convertSalesDoc, createCreditNote, createSalesDoc, issueInvoice, issueTaxDocument } from "../src/features/sales/service";
+import { addPayment, convertSalesDoc, createCreditNote, createSalesDoc, getSalesDoc, issueInvoice, issueTaxDocument } from "../src/features/sales/service";
+import { createEntry, listCategories } from "../src/features/finance/service";
 import { createWorker } from "../src/features/workforce/service";
 import { todayInRiyadh } from "../src/features/master-data/expiry";
 
@@ -107,6 +108,25 @@ async function main() {
   await issueTaxDocument(ctx, credit.id);
   await createSalesDoc(ctx, "INVOICE", doc(gulf.id, dammam.id, [{ description: "Helpers – November", descriptionAr: "عمال – نوفمبر", quantity: 26000, unitPrice: 8000 }]));
   console.log("Seeded sales: 2 quotations, 1 issued invoice (part paid, with a credit note), 1 draft invoice.");
+
+  // Finance: a fully paid invoice for Khobar Mall (its payment becomes income) and expenses per site.
+  const khobarInvoice = await createSalesDoc(ctx, "INVOICE", doc(eastern.id, khobar.id, [{ description: "Cleaners – October, 26 days", descriptionAr: "عمال نظافة – أكتوبر، 26 يوماً", quantity: 4 * 26000, unitPrice: 9000 }]));
+  const issuedKhobar = await issueInvoice(ctx, khobarInvoice.id);
+  const khobarTotal = (await getSalesDoc(ctx, issuedKhobar.id)).total;
+  await addPayment(ctx, khobarInvoice.id, { amount: khobarTotal, paidOn: inDays(-2), method: "BANK_TRANSFER", reference: "TRX-0998" });
+  const categories = await listCategories(ctx);
+  const cat = (key: string) => categories.find((c) => c.systemKey === key)!.id;
+  const expense = (key: string, amount: number, siteId: string | null, description: string, includesVat = false, daysAgo = 1) =>
+    createEntry(ctx, { kind: "EXPENSE", categoryId: cat(key), amount, includesVat, date: inDays(-daysAgo), method: "BANK_TRANSFER", siteId, description, reference: null });
+  await expense("salaries", 690000, jubail.id, "Salaries – Jubail Plant");
+  await expense("salaries", 405000, dammam.id, "Salaries – Dammam Tower");
+  await expense("salaries", 175000, khobar.id, "Salaries – Khobar Mall");
+  await expense("accommodation", 345000, jubail.id, "Camp rent", true, 3);
+  await expense("transport", 86250, dammam.id, "Bus hire", true, 4);
+  await expense("food", 120000, khobar.id, "Meals for cleaners", false, 2);
+  await expense("rent", 575000, null, "Office rent", true, 5);
+  await expense("government_fees", 65000, null, "Iqama renewal – Imran Khan", false, 6);
+  console.log("Seeded finance: 1 paid invoice, 8 expenses.");
   console.log("Seeded: owner@demo.test / accountant@demo.test (password demo12345)");
 }
 
