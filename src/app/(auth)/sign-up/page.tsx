@@ -31,6 +31,20 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
       }
     >
       <SignUpForm next={next} defaultEmail={email} />
+      <p className="mt-4 text-xs text-slate-600">
+        {t.rich("agree", {
+          terms: (chunks) => (
+            <Link href="/terms" target="_blank" className="underline">
+              {chunks}
+            </Link>
+          ),
+          privacy: (chunks) => (
+            <Link href="/privacy" target="_blank" className="underline">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
     </AuthCard>
   );
 }

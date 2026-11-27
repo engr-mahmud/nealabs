@@ -1,8 +1,12 @@
 /**
- * Subscription plans and prices. Prices are placeholders to be validated with
- * the first customers. Never hardcode prices in components: read them here.
+ * Subscription plans and prices. Never hardcode prices in components: read them here.
  * Amounts are integers in halalas (1 SAR = 100 halalas) and exclude VAT.
+ *
+ * TO BE VALIDATED: the SAR prices and limits below are placeholders. Confirm them
+ * with the first customers before launch, then set PRICES_VALIDATED to true.
  */
+export const PRICES_VALIDATED = false;
+
 export const BILLING_CYCLES = ["MONTHLY", "QUARTERLY", "YEARLY"] as const;
 export type BillingCycleCode = (typeof BILLING_CYCLES)[number];
 
@@ -26,6 +30,32 @@ export const PLANS = [
 ] as const;
 
 export type PlanCode = (typeof PLANS)[number]["code"];
+
+/** The plan highlighted as "Most popular" on the pricing page. */
+export const RECOMMENDED_PLAN: PlanCode = "PRO";
+
+export function isPlanCode(value: unknown): value is PlanCode {
+  return typeof value === "string" && PLANS.some((p) => p.code === value);
+}
+
+export function isBillingCycle(value: unknown): value is BillingCycleCode {
+  return typeof value === "string" && (BILLING_CYCLES as readonly string[]).includes(value);
+}
+
+/** Subscription billing rules. */
+export const billingConfig = {
+  /** VAT on subscriptions, basis points (1500 = 15%). */
+  vatRate: 1500,
+  /** A paid plan can be renewed from this many days before it ends. */
+  renewWindowDays: 14,
+  /** Reminder emails this many days before a trial or paid period ends. */
+  reminderDays: [7, 1],
+  /** Unpaid checkouts are closed after this many hours. */
+  checkoutExpiryHours: 48,
+  /** Subscription tax invoice number prefix, e.g. SUB-2026-00001. */
+  invoicePrefix: "SUB-",
+  invoiceDigits: 5,
+} as const;
 
 export function getPlan(code: PlanCode) {
   const plan = PLANS.find((p) => p.code === code);

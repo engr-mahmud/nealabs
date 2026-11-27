@@ -145,24 +145,26 @@ model Organization {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  createdBy         User                @relation("OrganizationCreatedBy", fields: [createdById], references: [id])
-  memberships       Membership[]
-  invitations       Invitation[]
-  subscription      Subscription?
-  auditLogs         AuditLog[]
-  logo              OrganizationLogo?
-  clients           Client[]
-  sites             Site[]
-  workers           Worker[]
-  salesDocs         SalesDocument[]
-  salesLines        SalesDocumentLine[]
-  payments          SalesPayment[]
-  docCounters       DocumentCounter[]
-  financeCategories FinanceCategory[]
-  financeEntries    FinanceEntry[]
-  payrollSettings   PayrollSettings?
-  salarySheets      SalarySheet[]
-  salaryLines       SalarySheetLine[]
+  createdBy            User                  @relation("OrganizationCreatedBy", fields: [createdById], references: [id])
+  memberships          Membership[]
+  invitations          Invitation[]
+  subscription         Subscription?
+  auditLogs            AuditLog[]
+  logo                 OrganizationLogo?
+  clients              Client[]
+  sites                Site[]
+  workers              Worker[]
+  salesDocs            SalesDocument[]
+  salesLines           SalesDocumentLine[]
+  payments             SalesPayment[]
+  docCounters          DocumentCounter[]
+  financeCategories    FinanceCategory[]
+  financeEntries       FinanceEntry[]
+  payrollSettings      PayrollSettings?
+  salarySheets         SalarySheet[]
+  salaryLines          SalarySheetLine[]
+  billingCheckouts     BillingCheckout[]
+  subscriptionInvoices SubscriptionInvoice[]
 
   @@map("organizations")
 }
@@ -214,19 +216,98 @@ model Invitation {
 
 /// RLS
 model Subscription {
-  id               String             @id @default(cuid())
-  organizationId   String             @unique
-  status           SubscriptionStatus
-  planCode         String?
-  billingCycle     BillingCycle?
-  trialEndsAt      DateTime
-  currentPeriodEnd DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  id                 String             @id @default(cuid())
+  organizationId     String             @unique
+  status             SubscriptionStatus
+  planCode           String?
+  billingCycle       BillingCycle?
+  trialEndsAt        DateTime
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  /// A renewal paid early with a different plan or cycle: it applies from scheduledFrom (the old period end).
+  scheduledPlanCode  String?
+  scheduledCycle     BillingCycle?
+  scheduledFrom      DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+}
+
+enum CheckoutStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+/// RLS. One attempt to pay for a plan period. The payment gateway (or the test gateway) moves it to PAID or FAILED.
+/// Amounts are integer halalas, fixed when the checkout is created.
+model BillingCheckout {
+  id               String         @id @default(cuid())
+  organizationId   String
+  createdById      String?
+  planCode         String
+  billingCycle     BillingCycle
+  subtotal         Int
+  vatRate          Int
+  vatAmount        Int
+  total            Int
+  gateway          String
+  /// The gateway's own id for this checkout (Moyasar invoice id).
+  gatewayRef       String?        @unique
+  gatewayPaymentId String?
+  status           CheckoutStatus @default(PENDING)
+  failureReason    String?
+  paidAt           DateTime?
+  periodStart      DateTime?
+  periodEnd        DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice      SubscriptionInvoice?
+
+  @@index([organizationId, createdAt])
+  @@map("billing_checkouts")
+}
+
+/// RLS. Tax invoice issued by the software seller to a customer company for a paid checkout.
+/// Seller and buyer details are copied at issue time and never change afterwards.
+model SubscriptionInvoice {
+  id             String       @id @default(cuid())
+  organizationId String
+  checkoutId     String       @unique
+  number         String       @unique
+  issuedAt       DateTime
+  seller         Json
+  buyer          Json
+  planCode       String
+  billingCycle   BillingCycle
+  periodStart    DateTime
+  periodEnd      DateTime
+  subtotal       Int
+  vatRate        Int
+  vatAmount      Int
+  total          Int
+  qrPayload      String
+  createdAt      DateTime     @default(now())
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  checkout     BillingCheckout @relation(fields: [checkoutId], references: [id])
+
+  @@index([organizationId, issuedAt])
+  @@map("subscription_invoices")
+}
+
+/// Gapless numbering for the software seller's own documents (not tenant data).
+model BillingCounter {
+  key        String @id
+  lastNumber Int    @default(0)
+
+  @@map("billing_counters")
 }
 
 /// RLS
@@ -323,8 +404,8 @@ model Site {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client         Client          @relation(fields: [clientId, organizationId], references: [id, organizationId])
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client         Client            @relation(fields: [clientId, organizationId], references: [id, organizationId])
   workers        Worker[]
   salesDocs      SalesDocument[]
   financeEntries FinanceEntry[]
@@ -364,8 +445,8 @@ model Worker {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  site         Site?              @relation(fields: [siteId, organizationId], references: [id, organizationId])
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  site         Site?             @relation(fields: [siteId, organizationId], references: [id, organizationId])
   salaryLines  SalarySheetLine[]
 
   @@unique([id, organizationId])
@@ -655,7 +736,7 @@ model SalarySheet {
 
 /// One worker on one salary sheet. Worker details are copied so later edits do not change old sheets.
 model SalarySheetLine {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   organizationId     String
   sheetId            String
   workerId           String
@@ -674,22 +755,22 @@ model SalarySheetLine {
   transportAllowance Int
   otherAllowance     Int
   /// Inputs. Days and hours in thousandths (1.5 = 1500), money in halalas.
-  absentDays         Int      @default(0)
-  overtimeHours      Int      @default(0)
-  additions          Int      @default(0)
-  advances           Int      @default(0)
-  deductions         Int      @default(0)
+  absentDays         Int       @default(0)
+  overtimeHours      Int       @default(0)
+  additions          Int       @default(0)
+  advances           Int       @default(0)
+  deductions         Int       @default(0)
   notes              String?
   /// Calculated (halalas).
   grossSalary        Int
-  absenceDeduction   Int      @default(0)
-  overtimePay        Int      @default(0)
+  absenceDeduction   Int       @default(0)
+  overtimePay        Int       @default(0)
   netPay             Int
   /// Day the money was handed to the worker (set after approval with "Mark as paid").
   paidAt             DateTime? @db.Date
   paidById           String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   sheet        SalarySheet  @relation(fields: [sheetId, organizationId], references: [id, organizationId], onDelete: Cascade)
