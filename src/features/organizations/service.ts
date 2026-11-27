@@ -4,6 +4,7 @@ import { generateToken, hashToken } from "@/lib/crypto";
 import { AppError, ForbiddenError, NotFoundError } from "@/lib/errors";
 import { env } from "@/lib/env";
 import { writeAudit } from "@/features/audit/log";
+import { exportRows } from "@/features/import/export";
 import { trialEndDate } from "@/features/billing/access";
 import { assertCan, type OrgContext } from "./context";
 import { checkLogo } from "./logo";
@@ -246,5 +247,7 @@ export async function exportOrganizationData(ctx: OrgContext) {
     db.subscription.findUnique({ where: { organizationId: ctx.organizationId } }),
     ctx.role === "OWNER" ? db.auditLog.findMany({ orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
   ]);
-  return { exportedAt: new Date().toISOString(), organization, members, subscription, auditLogs };
+  // Master data in the same columns as the Excel templates (worker numbers decrypted; the export is audited).
+  const [clients, sites, workers] = await Promise.all([exportRows(ctx, "clients"), exportRows(ctx, "sites"), exportRows(ctx, "workers")]);
+  return { exportedAt: new Date().toISOString(), organization, members, subscription, clients, sites, workers, auditLogs };
 }

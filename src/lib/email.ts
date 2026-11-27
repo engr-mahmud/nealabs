@@ -30,12 +30,13 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
 }
 
 /** Minimal, safe HTML wrapper. Every dynamic value must be escaped. */
-export function emailLayout(opts: { dir: "ltr" | "rtl"; heading: string; body: string; cta?: { label: string; url: string }; footer: string }) {
+export function emailLayout(opts: { dir: "ltr" | "rtl"; heading: string; body: string; lines?: string[]; cta?: { label: string; url: string }; footer: string }) {
+  const list = opts.lines?.length ? `<ul style="padding-inline-start:20px">${opts.lines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>` : "";
   const cta = opts.cta
     ? `<p style="margin:24px 0"><a href="${escapeHtml(opts.cta.url)}" style="background:#0f766e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;display:inline-block">${escapeHtml(opts.cta.label)}</a></p>`
     : "";
   return `<!doctype html><html dir="${opts.dir}"><body style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6;max-width:560px;margin:0 auto;padding:24px">
-<h1 style="font-size:20px">${escapeHtml(opts.heading)}</h1><p>${escapeHtml(opts.body)}</p>${cta}
+<h1 style="font-size:20px">${escapeHtml(opts.heading)}</h1><p>${escapeHtml(opts.body)}</p>${list}${cta}
 <p style="color:#64748b;font-size:13px">${escapeHtml(opts.footer)}</p></body></html>`;
 }
 

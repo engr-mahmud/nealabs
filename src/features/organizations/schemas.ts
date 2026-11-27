@@ -1,17 +1,7 @@
 import { z } from "zod";
 import { isValidCrNumber, isValidSaudiIban, isValidSaudiVat, normalizeIban, toAsciiDigits } from "@/lib/validators";
+import { digitsOnly as digits, optionalText } from "@/lib/schema-helpers";
 import { emailSchema } from "@/features/auth/schemas";
-
-const optionalText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, { error: "tooLong" })
-    .transform((v) => (v === "" ? null : v))
-    .nullable()
-    .optional();
-
-const digits = (v: string) => toAsciiDigits(v).replace(/\s+/g, "");
 
 export const companyNameSchema = z.object({
   nameEn: z.string().trim().min(2, { error: "required" }).max(120, { error: "tooLong" }),

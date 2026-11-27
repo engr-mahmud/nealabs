@@ -3,7 +3,7 @@
 Subscription business software for manpower supply, contracting and supply companies in Saudi Arabia.
 English and Arabic (RTL), multi-company, 7-day free trial.
 
-**Status:** step 1 of 7 done: auth with SMS phone verification, organizations, roles, trial and read-only mode.
+**Status:** steps 1 and 2 of 7 done: auth with SMS phone verification, organizations, roles, trial and read-only mode; clients, sites and workforce with Excel import.
 
 ## What works now
 - Sign up with email and Saudi mobile, 6-digit SMS code to verify the phone, sign in, sign out, forgot/reset password (rate limited).
@@ -13,6 +13,10 @@ English and Arabic (RTL), multi-company, 7-day free trial.
 - Team: invite by email as Owner or Accountant, accept invitation, remove member.
 - Trial banner with days left; after expiry the company is read-only, with data export always available.
 - English/Arabic switch with full RTL layout.
+- Clients, sites (each linked to a client) and workforce: add, edit, search, filter, archive/restore, export to Excel.
+- Excel import for clients, sites and workers: download template, upload, preview with row-level errors, import the valid rows.
+- Iqama and passport numbers encrypted in the database, masked in lists, full number shown only on request (logged).
+- Iqama/passport expiry: badges in the list, "expiring in 30 days" filter, dashboard card, daily reminder email (30, 14, 7, 1 days before and on the day).
 
 ## Local setup
 
@@ -54,6 +58,8 @@ The app logs `[security] ... Row Level Security is NOT enforced` at startup if t
 | `UNIFONIC_APP_SID`, `UNIFONIC_SENDER_ID` | with unifonic | Unifonic app ID and registered sender name |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | with twilio | Twilio credentials; `TWILIO_FROM` is a number or Messaging Service SID |
 | `TRIAL_DAYS` | no | Free trial length, default `7` |
+| `FIELD_ENCRYPTION_KEY` | yes | 32 random bytes, base64 (`openssl rand -base64 32`). Encrypts Iqama and passport numbers. Back it up separately from the database and never change it once real data exists. |
+| `CRON_SECRET` | for reminders | Bearer token for `/api/cron/expiry-reminders` (`openssl rand -hex 32`) |
 
 ## Tests
 
@@ -63,7 +69,7 @@ DATABASE_URL=<test url> npx prisma migrate deploy
 npm test
 ```
 
-Covers: tenant isolation (RLS and service layer), trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
+Covers: tenant isolation (RLS, service layer and cross-company links for clients, sites, workers), Iqama encryption and masking, Excel import/export, trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
 
 Other checks: `npm run typecheck`, `npm run lint`, `npm run build`.
 
@@ -114,6 +120,13 @@ DATABASE_URL=postgresql://nealabs:<pw>@127.0.0.1:5432/nealabs_restore scripts/re
 
 Then point `DATABASE_URL` at the restored database (or rename it) and restart the app. Test a restore at least once a month.
 
+## Daily reminder job
+
+`GET /api/cron/expiry-reminders` with `Authorization: Bearer $CRON_SECRET` emails Iqama/passport expiry reminders. Safe to call more than once a day (one email per company per day).
+
+- Vercel: `vercel.json` already schedules it daily at 05:00 UTC (08:00 Riyadh); set `CRON_SECRET` in the project.
+- VPS: `0 5 * * * curl -fsS -H "Authorization: Bearer <CRON_SECRET>" https://app.example.com/api/cron/expiry-reminders`
+
 ## Monitoring
 
 Planned before production launch: an uptime check on `APP_URL` and error tracking (for example a self-hosted GlitchTip/Sentry-compatible endpoint). Not wired yet.
@@ -123,7 +136,7 @@ Planned before production launch: an uptime check on `APP_URL` and error trackin
 ```
 src/
   config/        brand.ts (names, colors, contacts), plans.ts (prices)
-  features/      auth, organizations, billing, audit (server logic, actions, components)
+  features/      auth, organizations, billing, audit, clients, sites, workforce, import, master-data
   components/    ui primitives and layout
   lib/           db (tenantDb / systemDb), env, errors, rate limit, email, validators
   i18n/, messages/  next-intl config, en.json and ar.json

@@ -31,11 +31,11 @@ enum BillingCycle {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String
-  passwordHash String
-  locale       String   @default("en")
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String
+  passwordHash    String
+  locale          String    @default("en")
   /// Verified mobile in E.164 (+9665XXXXXXXX). Unique: one phone number is one account.
   phone           String?   @unique
   phoneVerifiedAt DateTime?
@@ -43,14 +43,14 @@ model User {
   pendingPhone    String?
   /// End of this account's free trial; set when the first company is created.
   trialEndsAt     DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   memberships   Membership[]
   sessions      Session[]
   resetTokens   PasswordResetToken[]
   phoneCodes    PhoneVerificationCode[]
-  organizations Organization[] @relation("OrganizationCreatedBy")
+  organizations Organization[]          @relation("OrganizationCreatedBy")
 
   @@map("users")
 }
@@ -110,6 +110,9 @@ model Organization {
   subscription Subscription?
   auditLogs    AuditLog[]
   logo         OrganizationLogo?
+  clients      Client[]
+  sites        Site[]
+  workers      Worker[]
 
   @@map("organizations")
 }
@@ -226,4 +229,92 @@ model TrialClaim {
   createdAt DateTime @default(now())
 
   @@map("trial_claims")
+}
+
+/// RLS. A customer of the company (the party invoices are issued to).
+model Client {
+  id             String    @id @default(cuid())
+  organizationId String
+  nameEn         String
+  nameAr         String?
+  vatNumber      String?
+  crNumber       String?
+  contactName    String?
+  phone          String?
+  email          String?
+  addressLine    String?
+  city           String?
+  postalCode     String?
+  notes          String?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sites        Site[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, archivedAt])
+  @@map("clients")
+}
+
+/// RLS. A work location of a client. The composite foreign key keeps a site in its client's organization.
+model Site {
+  id             String    @id @default(cuid())
+  organizationId String
+  clientId       String
+  name           String
+  city           String?
+  address        String?
+  notes          String?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client       @relation(fields: [clientId, organizationId], references: [id, organizationId])
+  workers      Worker[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, archivedAt])
+  @@index([clientId])
+  @@map("sites")
+}
+
+/// RLS. A worker. Iqama and passport numbers are encrypted at rest (AES-256-GCM);
+/// the hash is a keyed HMAC used for duplicate checks and exact search, the last 4 digits for masked display.
+model Worker {
+  id                 String    @id @default(cuid())
+  organizationId     String
+  name               String
+  nameAr             String?
+  iqamaEncrypted     String
+  iqamaHash          String
+  iqamaLast4         String
+  nationality        String?
+  jobTitle           String?
+  phone              String?
+  /// Monthly amounts in halalas (1 SAR = 100 halalas).
+  basicSalary        Int       @default(0)
+  housingAllowance   Int       @default(0)
+  transportAllowance Int       @default(0)
+  otherAllowance     Int       @default(0)
+  siteId             String?
+  iqamaExpiry        DateTime? @db.Date
+  passportEncrypted  String?
+  passportLast4      String?
+  passportExpiry     DateTime? @db.Date
+  archivedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  site         Site?        @relation(fields: [siteId, organizationId], references: [id, organizationId])
+
+  @@unique([organizationId, iqamaHash])
+  @@index([organizationId, archivedAt])
+  @@index([organizationId, iqamaExpiry])
+  @@index([organizationId, passportExpiry])
+  @@index([siteId])
+  @@map("workers")
 }

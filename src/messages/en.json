@@ -13,7 +13,14 @@
     "remove": "Remove",
     "saved": "Saved",
     "menu": "Menu",
-    "account": "Account"
+    "account": "Account",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "archivedBadge": "Archived",
+    "none": "None",
+    "download": "Download",
+    "notSet": "Not set"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -22,7 +29,10 @@
     "billing": "Plan & billing",
     "newOrganization": "Add another company",
     "switchOrganization": "Switch company",
-    "currentOrganization": "Current company"
+    "currentOrganization": "Current company",
+    "clients": "Clients",
+    "sites": "Sites",
+    "workforce": "Workforce"
   },
   "home": {
     "title": "Run your manpower company from one simple place",
@@ -84,7 +94,22 @@
     "invalidPostalCode": "Postal code should be 5 digits.",
     "invalidIban": "Enter a valid Saudi IBAN (SA followed by 22 digits).",
     "invalidPhone": "Enter a Saudi mobile number, for example 0512345678.",
-    "invalidCode": "Enter the 6-digit code."
+    "invalidCode": "Enter the 6-digit code.",
+    "invalidContactPhone": "Enter a phone number with digits only, for example 0138000000.",
+    "invalidIqama": "Iqama number should be 10 digits, starting with 2 (or 1 for a Saudi ID).",
+    "invalidPassport": "Passport number should be 5 to 20 letters and digits.",
+    "invalidAmount": "Enter an amount in SAR, for example 1500 or 1500.50.",
+    "invalidDate": "Enter a date like 2027-03-15 or 15/03/2027.",
+    "chooseClient": "Choose a client.",
+    "chooseSite": "Choose an active site, or leave it empty.",
+    "clientExists": "A client with this name already exists.",
+    "siteExists": "This client already has a site with this name.",
+    "iqamaTaken": "A worker with this Iqama number already exists (check archived workers too).",
+    "restoreClientFirst": "Restore the client first, then the site.",
+    "clientNotFound": "No active client with this name. Add the client first, or check the spelling.",
+    "siteNotFound": "No active site with this name. Add the site first, or check the spelling.",
+    "siteAmbiguous": "More than one client has a site with this name. Fill in the Client column too.",
+    "duplicateInFile": "This appears more than once in the file."
   },
   "errors": {
     "generic": "Something went wrong. Please try again. If it keeps happening, contact support.",
@@ -109,7 +134,13 @@
     "codeTooManyAttempts": "Too many wrong tries. Tap \"Send a new code\".",
     "codeCooldown": "Please wait a minute before asking for a new code.",
     "phoneNotVerified": "Please verify your mobile number first.",
-    "smsFailed": "We could not send the SMS. Check the number and try again in a minute."
+    "smsFailed": "We could not send the SMS. Check the number and try again in a minute.",
+    "importNoFile": "Choose an Excel file (.xlsx) to upload.",
+    "importTooLarge": "The file is too large. Use a file under 2 MB, or split it into smaller files.",
+    "importNotExcel": "This is not an Excel .xlsx file. Download the template, fill it in and upload it.",
+    "importEmpty": "The file has no data rows. Fill in the first sheet under the header row.",
+    "importMissingColumns": "Some required columns are missing. Download the template and keep its column headers.",
+    "importTooManyRows": "Too many rows. Upload at most 2,000 rows at a time."
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
@@ -251,7 +282,20 @@
     },
     "next": {
       "title": "Coming next",
-      "body": "Clients, sites, workforce, invoices and salary sheets will appear here."
+      "body": "Invoices with QR, income and expenses, and salary sheets will appear here."
+    },
+    "expiring": {
+      "title": "Expiring documents",
+      "none": "No Iqama or passport expires in the next 30 days.",
+      "count": "{count, plural, one {# document needs attention} other {# documents need attention}}",
+      "viewAll": "View all",
+      "noWorkers": "Add your workers to get reminders before their Iqama or passport expires."
+    },
+    "sites": {
+      "title": "Active sites",
+      "workers": "{count, plural, one {# active worker} other {# active workers}}",
+      "add": "Add a site",
+      "manage": "View sites"
     }
   },
   "export": {
@@ -272,6 +316,16 @@
       "body": "{inviter} invited you to join {org} as {role}. The invitation works for 7 days.",
       "cta": "Accept invitation",
       "footer": "If you were not expecting this, you can ignore this email."
+    },
+    "expiry": {
+      "subject": "{count, plural, one {# worker document expires soon} other {# worker documents expire soon}} · {org}",
+      "heading": "Documents expiring soon",
+      "body": "These Iqama and passport dates in {org} need attention:",
+      "cta": "Open workforce",
+      "footer": "You get this email because you are a member of {org}. Reminders are sent 30, 14, 7 and 1 days before expiry, and on the day.",
+      "line": "{name}: {document} {when}",
+      "expiredLine": "expired on {date}",
+      "expiresLine": "expires on {date}"
     }
   },
   "verify": {
@@ -289,5 +343,177 @@
   },
   "sms": {
     "code": "{brand} code: {code}. Valid for 10 minutes. Do not share it with anyone."
+  },
+  "list": {
+    "search": "Search",
+    "active": "Active",
+    "archived": "Archived",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pageCount} · {total} total",
+    "pages": "Pages",
+    "noResults": "Nothing matches your search.",
+    "clearSearch": "Clear search",
+    "exportExcel": "Export to Excel",
+    "importExcel": "Import from Excel"
+  },
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Companies you supply workers to and invoice.",
+    "add": "Add client",
+    "newTitle": "New client",
+    "searchPlaceholder": "Search by name, contact, VAT or city",
+    "empty": {
+      "title": "No clients yet",
+      "body": "Add the companies you supply workers to. You will pick them when you create invoices and sites."
+    },
+    "emptyArchived": "No archived clients.",
+    "sections": {
+      "company": "Company",
+      "contact": "Contact",
+      "address": "Address",
+      "notes": "Notes"
+    },
+    "fields": {
+      "nameEn": "Client name (English)",
+      "nameAr": "Client name (Arabic)",
+      "vatNumber": "VAT number",
+      "crNumber": "CR number",
+      "contactName": "Contact person",
+      "phone": "Phone",
+      "email": "Email",
+      "addressLine": "Address",
+      "city": "City",
+      "postalCode": "Postal code",
+      "notes": "Notes"
+    },
+    "vatHint": "Needed on tax invoices if the client is VAT registered.",
+    "sites": "Sites",
+    "sitesCount": "{count, plural, =0 {No sites} one {# site} other {# sites}}",
+    "addSite": "Add site",
+    "noSites": "No sites for this client yet. Add the locations where your workers go.",
+    "saved": "Client saved.",
+    "archiveConfirm": "Archive this client and its sites? Nothing is deleted and you can restore it later.",
+    "archivedNote": "This client is archived. Restore it to use it again."
+  },
+  "sites": {
+    "title": "Sites",
+    "subtitle": "Work locations of your clients.",
+    "add": "Add site",
+    "newTitle": "New site",
+    "searchPlaceholder": "Search by site, client or city",
+    "empty": {
+      "title": "No sites yet",
+      "body": "A site is a client's work location. Add a client first, then its sites."
+    },
+    "needClient": "Add a client first. Every site belongs to a client.",
+    "emptyArchived": "No archived sites.",
+    "fields": {
+      "client": "Client",
+      "name": "Site name",
+      "city": "City",
+      "address": "Address",
+      "notes": "Notes"
+    },
+    "allClients": "All clients",
+    "workersCount": "{count, plural, =0 {No workers} one {# worker} other {# workers}}",
+    "archiveConfirm": "Archive this site? Workers keep it in their history. You can restore it later.",
+    "archivedNote": "This site is archived. Restore it to use it again.",
+    "viewWorkers": "View workers"
+  },
+  "workers": {
+    "title": "Workforce",
+    "subtitle": "Your workers, their salaries and document expiry dates.",
+    "add": "Add worker",
+    "newTitle": "New worker",
+    "searchPlaceholder": "Search by name, job, nationality, mobile or Iqama",
+    "empty": {
+      "title": "No workers yet",
+      "body": "Add workers one by one, or import them all from Excel in one go."
+    },
+    "emptyArchived": "No archived workers.",
+    "saved": "Worker saved.",
+    "sections": {
+      "personal": "Worker",
+      "work": "Site and salary",
+      "documents": "Documents"
+    },
+    "fields": {
+      "name": "Full name",
+      "nameAr": "Name (Arabic)",
+      "iqamaNumber": "Iqama number",
+      "nationality": "Nationality",
+      "jobTitle": "Job title",
+      "phone": "Mobile",
+      "site": "Site",
+      "basicSalary": "Basic salary (SAR)",
+      "housingAllowance": "Housing allowance (SAR)",
+      "transportAllowance": "Transport allowance (SAR)",
+      "otherAllowance": "Other allowance (SAR)",
+      "iqamaExpiry": "Iqama expiry",
+      "passportNumber": "Passport number",
+      "passportExpiry": "Passport expiry"
+    },
+    "monthlyTotal": "Monthly total",
+    "noSite": "No site",
+    "allSites": "All sites",
+    "withoutSite": "Without a site",
+    "keepNumber": "Saved as {masked}. Leave empty to keep it.",
+    "clearPassport": "Remove the saved passport number",
+    "show": "Show",
+    "hide": "Hide",
+    "revealNote": "Viewing a full number is recorded in the activity log.",
+    "expiry": {
+      "all": "All documents",
+      "soon": "Expiring in 30 days or expired",
+      "expired": "Expired",
+      "expiredOn": "Expired {date}",
+      "expiresIn": "{days, plural, =0 {Expires today} one {Expires tomorrow} other {In # days}}",
+      "ok": "Valid until {date}"
+    },
+    "docs": {
+      "iqama": "Iqama",
+      "passport": "Passport"
+    },
+    "saveAndAdd": "Save and add another",
+    "archiveConfirm": "Archive this worker? Their records stay and you can restore them later.",
+    "archivedNote": "This worker is archived. Restore them to include them again.",
+    "columns": {
+      "worker": "Worker",
+      "site": "Site",
+      "salary": "Monthly total",
+      "documents": "Documents"
+    }
+  },
+  "import": {
+    "title": {
+      "clients": "Import clients",
+      "sites": "Import sites",
+      "workers": "Import workers"
+    },
+    "subtitle": "Three steps: download the template, fill it in, upload it. You will see a preview before anything is saved.",
+    "step1": "1. Download the Excel template",
+    "step1Help": "Keep the column headers. Columns marked Required must be filled in.",
+    "template": "Download template",
+    "step2": "2. Upload the filled file",
+    "choose": "Choose Excel file",
+    "noFile": "No file chosen",
+    "check": "Check file",
+    "checking": "Checking…",
+    "summary": "{valid, plural, one {# row is ready} other {# rows are ready}}. {errors, plural, =0 {No errors.} one {# row has errors and will be skipped.} other {# rows have errors and will be skipped.}}",
+    "fixHint": "Fix the red cells in Excel and upload again, or import the ready rows now.",
+    "importRows": "{count, plural, one {Import # row} other {Import # rows}}",
+    "importing": "Importing…",
+    "startOver": "Upload another file",
+    "done": "{imported, plural, one {# row imported} other {# rows imported}}.",
+    "doneSkipped": "{skipped, plural, one {# row with errors was skipped.} other {# rows with errors were skipped.}}",
+    "viewList": "Go to the list",
+    "row": "Row",
+    "status": "Status",
+    "ok": "Ready",
+    "hasErrors": "Error",
+    "nothingValid": "No row is ready to import. Fix the errors in Excel and upload the file again.",
+    "sitesNeedClients": "Sites are matched to clients by the client name, so import or add clients first.",
+    "workersNeedSites": "Workers are matched to sites by site name. The Site and Client columns are optional."
   }
 }

@@ -16,6 +16,10 @@ const schema = z.object({
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_FROM: z.string().optional(),
+  /** 32 random bytes, base64. Encrypts Iqama and passport numbers. Keep it secret and backed up. */
+  FIELD_ENCRYPTION_KEY: z.string().optional(),
+  /** Shared secret for scheduled jobs (Authorization: Bearer <CRON_SECRET>). */
+  CRON_SECRET: z.string().min(16).optional(),
   TRIAL_DAYS: z.coerce.number().int().min(1).max(60).default(7),
 });
 

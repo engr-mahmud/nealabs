@@ -68,6 +68,18 @@ Short record of choices made, with the reason. Update when a decision changes.
 ## Known dev-only advisory
 - `npm audit` reports a high-severity advisory in `effect`, pulled in by the Prisma CLI (`prisma` dev dependency, config parsing). It is not part of the running app. Re-check when Prisma releases a fix.
 
+## Master data (step 2, 2026-11-27)
+- **Clients, Sites, Workers** are tenant tables with RLS like the others. A site points to its client and a worker to its site through **composite foreign keys (id + organizationId)**, so the database itself refuses a link to another company's record, even outside the app code.
+- **Nothing is deleted.** Clients, sites and workers are archived and can be restored. Archiving a client also archives its sites. Workers keep their (archived) site for history.
+- **Duplicates:** active client names are unique per company (case-insensitive); site names unique per client; Iqama unique per company (also across archived workers).
+- **Iqama and passport numbers are encrypted at rest** with AES-256-GCM (`src/lib/field-crypto.ts`, key `FIELD_ENCRYPTION_KEY`, versioned `v1:` format for future key rotation). For duplicate checks and exact search a keyed HMAC per company is stored, plus the last 4 digits for masked display ("•••• 1234"). Full numbers never go to list pages, URLs, logs or audit metadata; showing one is a button that writes `worker.document_viewed` to the audit log. The edit form never receives the full number (empty field = keep). The Excel export and the JSON data export contain full numbers (it is the customer's data) and are audited.
+- **Losing `FIELD_ENCRYPTION_KEY` means losing the numbers.** Back it up outside the database backups.
+- Iqama format: 10 digits starting with 2 (resident) or 1 (Saudi ID). **Please verify against official sources**; easy to change in `src/features/workforce/schemas.ts`.
+- **Salary fields:** basic, housing, transport and other allowance, monthly, integer halalas. Salary changes are written to the audit log with old and new amounts (step 5 builds on these).
+- **Expiry:** dates are stored as dates (no time). "Today" is the Saudi calendar day (Asia/Riyadh). "Expiring soon" = within 30 days (`src/config/master-data.ts`). Reminder emails go to every Owner and Accountant at 30, 14, 7, 1 and 0 days, at most one email per company per day (dedupe key in `rate_limits`). Emails contain names and dates only.
+- **Excel import:** `.xlsx` only (checked by file signature), max 2 MB and 2,000 rows. Columns are matched by header (English or Arabic, any order). Step 1 checks every row and shows errors per cell without saving; step 2 sends the same file again and the server re-checks everything (the preview is never trusted), then saves the valid rows in one transaction and skips the rest. Sites are matched to clients by name; workers to sites by site name (plus client name when two clients have a site with the same name). Template, import and export share the same columns, so an export can be edited and re-imported.
+- **Lists** use plain GET search forms (work without JavaScript, shareable URLs), 50 rows per page.
+
 ## Open questions
 1. ~~Trial per company or per user?~~ Answered: one trial per new email + phone, verified by SMS.
 2. SMS provider account: Unifonic (recommended) or Twilio, plus a registered sender name.
@@ -75,3 +87,4 @@ Short record of choices made, with the reason. Update when a decision changes.
 4. Which SMTP provider for production email (needs a sending domain)?
 5. Final product name and brand color.
 6. Plan limits (workers, invoices) and SAR prices.
+7. Are 30 / 14 / 7 / 1 / 0 days the right reminder days for Iqama and passport renewals? Should reminders also go by SMS (costs money)?
