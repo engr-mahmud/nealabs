@@ -41,3 +41,14 @@ export class NotFoundError extends AppError {
     super("notFound");
   }
 }
+
+/** An expected error that belongs to one form field (shown under that field). */
+export class FieldError extends AppError {
+  constructor(
+    public readonly field: string,
+    code: string,
+  ) {
+    super(code);
+    this.name = "FieldError";
+  }
+}

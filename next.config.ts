@@ -13,7 +13,12 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
-  serverExternalPackages: ["@node-rs/argon2"],
+  // playwright-core loads some of its files at runtime; keep them in the standalone output.
+  outputFileTracingIncludes: {
+    "/api/sales/**/*": ["./node_modules/playwright-core/**/*"],
+    "/api/billing/**/*": ["./node_modules/playwright-core/**/*"],
+  },
+  serverExternalPackages: ["@node-rs/argon2", "playwright-core"],
   experimental: {
     serverActions: { bodySizeLimit: "1mb" },
   },

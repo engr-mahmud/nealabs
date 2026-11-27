@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { unstable_rethrow } from "next/navigation";
 import type { z } from "zod";
-import { AppError } from "@/lib/errors";
+import { AppError, FieldError } from "@/lib/errors";
 
 export interface ActionState {
   ok: boolean;
@@ -41,6 +41,10 @@ export async function actionError(error: unknown, formData?: FormData): Promise<
   unstable_rethrow(error);
   const t = await getTranslations("errors");
   const values = formData ? formValues(formData) : undefined;
+  if (error instanceof FieldError) {
+    const tv = await getTranslations("validation");
+    return { ok: false, fieldErrors: { [error.field]: tv.has(error.code) ? tv(error.code) : t("generic") }, values };
+  }
   if (error instanceof AppError) {
     return { ok: false, message: t.has(error.code) ? t(error.code) : t("generic"), values };
   }

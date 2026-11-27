@@ -2,6 +2,10 @@ import { prisma } from "@/lib/db";
 import { hashPassword } from "@/features/auth/password";
 import { loadOrgContext, type OrgContext } from "@/features/organizations/context";
 import { createOrganization } from "@/features/organizations/service";
+import { createClient } from "@/features/clients/service";
+import { createSite } from "@/features/sites/service";
+import type { ClientInput } from "@/features/clients/schemas";
+import type { WorkerCreateInput } from "@/features/workforce/schemas";
 
 if (!process.env.DATABASE_URL?.includes("test")) {
   throw new Error("Refusing to run tests against a non-test database. Check .env.test.");
@@ -9,7 +13,7 @@ if (!process.env.DATABASE_URL?.includes("test")) {
 
 export async function resetDb() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE trial_claims, phone_verification_codes, audit_logs, subscriptions, invitations, organization_logos, memberships, organizations, password_reset_tokens, sessions, users, rate_limits CASCADE',
+    'TRUNCATE TABLE subscription_invoices, billing_checkouts, billing_counters, salary_sheet_lines, salary_sheets, payroll_settings, finance_entries, finance_categories, sales_payments, sales_document_lines, sales_documents, document_counters, workers, sites, clients, trial_claims, phone_verification_codes, audit_logs, subscriptions, invitations, organization_logos, memberships, organizations, password_reset_tokens, sessions, users, rate_limits CASCADE',
   );
 }
 
@@ -47,4 +51,36 @@ export async function addMember(organizationId: string, role: "OWNER" | "ACCOUNT
   const membership = await prisma.membership.create({ data: { userId: user.id, organizationId, role } });
   const ctx = (await loadOrgContext(user.id, organizationId)) as OrgContext;
   return { user, membership, ctx };
+}
+
+export function clientInput(nameEn: string, extra: Partial<ClientInput> = {}): ClientInput {
+  return { nameEn, nameAr: null, vatNumber: null, crNumber: null, contactName: null, phone: null, email: null, addressLine: null, city: null, postalCode: null, notes: null, ...extra };
+}
+
+export function workerInput(name: string, iqamaNumber: string, extra: Partial<WorkerCreateInput> = {}): WorkerCreateInput {
+  return {
+    name,
+    nameAr: null,
+    iqamaNumber,
+    nationality: "Bangladesh",
+    jobTitle: "Helper",
+    phone: null,
+    basicSalary: 150000,
+    housingAllowance: 30000,
+    transportAllowance: 0,
+    otherAllowance: 0,
+    iqamaExpiry: null,
+    passportNumber: null,
+    passportExpiry: null,
+    siteId: null,
+    ...extra,
+  };
+}
+
+
+export async function orgWithSite(name: string) {
+  const owner = await createOwnerWithOrg(name);
+  const client = await createClient(owner.ctx, clientInput(`${name} Client`));
+  const site = await createSite(owner.ctx, { clientId: client.id, name: "Main Site", city: null, address: null, notes: null });
+  return { ...owner, client, site };
 }

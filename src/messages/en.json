@@ -13,7 +13,14 @@
     "remove": "Remove",
     "saved": "Saved",
     "menu": "Menu",
-    "account": "Account"
+    "account": "Account",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "archivedBadge": "Archived",
+    "none": "None",
+    "download": "Download",
+    "notSet": "Not set"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -22,14 +29,14 @@
     "billing": "Plan & billing",
     "newOrganization": "Add another company",
     "switchOrganization": "Switch company",
-    "currentOrganization": "Current company"
-  },
-  "home": {
-    "title": "Run your manpower company from one simple place",
-    "subtitle": "Invoices with QR, workforce records, timesheets and salary sheets, in English and Arabic.",
-    "cta": "Start 7-day free trial",
-    "noCard": "No card required",
-    "signIn": "Sign in"
+    "currentOrganization": "Current company",
+    "clients": "Clients",
+    "sites": "Sites",
+    "workforce": "Workforce",
+    "sales": "Sales",
+    "finance": "Finance",
+    "payroll": "Salaries",
+    "reports": "Reports"
   },
   "auth": {
     "signIn": {
@@ -46,7 +53,7 @@
       "submit": "Create account",
       "haveAccount": "Already have an account?",
       "signIn": "Sign in",
-      "agree": "By creating an account you agree to the Terms and Privacy Policy."
+      "agree": "By creating an account you agree to the <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
     },
     "forgot": {
       "title": "Reset your password",
@@ -84,7 +91,40 @@
     "invalidPostalCode": "Postal code should be 5 digits.",
     "invalidIban": "Enter a valid Saudi IBAN (SA followed by 22 digits).",
     "invalidPhone": "Enter a Saudi mobile number, for example 0512345678.",
-    "invalidCode": "Enter the 6-digit code."
+    "invalidCode": "Enter the 6-digit code.",
+    "invalidContactPhone": "Enter a phone number with digits only, for example 0138000000.",
+    "invalidIqama": "Iqama number should be 10 digits, starting with 2 (or 1 for a Saudi ID).",
+    "invalidPassport": "Passport number should be 5 to 20 letters and digits.",
+    "invalidAmount": "Enter an amount in SAR, for example 1500 or 1500.50.",
+    "invalidDate": "Enter a date like 2027-03-15 or 15/03/2027.",
+    "chooseClient": "Choose a client.",
+    "chooseSite": "Choose an active site, or leave it empty.",
+    "clientExists": "A client with this name already exists.",
+    "siteExists": "This client already has a site with this name.",
+    "iqamaTaken": "A worker with this Iqama number already exists (check archived workers too).",
+    "restoreClientFirst": "Restore the client first, then the site.",
+    "clientNotFound": "No active client with this name. Add the client first, or check the spelling.",
+    "siteNotFound": "No active site with this name. Add the site first, or check the spelling.",
+    "siteAmbiguous": "More than one client has a site with this name. Fill in the Client column too.",
+    "duplicateInFile": "This appears more than once in the file.",
+    "invalidQuantity": "Enter a quantity above 0, for example 1, 26 or 7.5.",
+    "addLine": "Add at least one item.",
+    "tooManyLines": "Too many items. Split them into two documents.",
+    "invalidPercent": "Enter a percent between 0 and 100.",
+    "dueBeforeIssue": "This date must be on or after the document date.",
+    "paymentTooLarge": "This is more than the balance due. Check the amount.",
+    "chooseCategory": "Choose a category.",
+    "categoryExists": "A category with this name already exists.",
+    "refundTooLarge": "This is more than the amount owed to the client.",
+    "invalidDays": "Enter the number of days, for example 2 or 0.5. It cannot be more than the days in the month.",
+    "invalidHours": "Enter hours, for example 10 or 7.5 (at most 300 in a month).",
+    "netNegative": "Deductions are more than the salary. Lower the advance or deductions (carry the rest to next month).",
+    "invalidMonth": "Choose a month.",
+    "timesheetWorkerUnknown": "Worker not found. Keep the 'Worker ref' column from the template, or add the worker under Workforce first.",
+    "timesheetWorkerAmbiguous": "Two workers have this name. Use the template so each row has its worker ref.",
+    "timesheetWorkerArchived": "This worker is archived. Restore them under Workforce, or remove the row.",
+    "timesheetWorkerTwice": "This worker appears twice in the file. Keep one row.",
+    "timesheetWorkerOnOtherSheet": "This worker is already on another salary sheet for this month."
   },
   "errors": {
     "generic": "Something went wrong. Please try again. If it keeps happening, contact support.",
@@ -109,7 +149,38 @@
     "codeTooManyAttempts": "Too many wrong tries. Tap \"Send a new code\".",
     "codeCooldown": "Please wait a minute before asking for a new code.",
     "phoneNotVerified": "Please verify your mobile number first.",
-    "smsFailed": "We could not send the SMS. Check the number and try again in a minute."
+    "smsFailed": "We could not send the SMS. Check the number and try again in a minute.",
+    "importNoFile": "Choose an Excel file (.xlsx) to upload.",
+    "importTooLarge": "The file is too large. Use a file under 2 MB, or split it into smaller files.",
+    "importNotExcel": "This is not an Excel .xlsx file. Download the template, fill it in and upload it.",
+    "importEmpty": "The file has no data rows. Fill in the first sheet under the header row.",
+    "importMissingColumns": "Some required columns are missing. Download the template and keep its column headers.",
+    "importTooManyRows": "Too many rows. Upload at most 2,000 rows at a time.",
+    "documentLocked": "This document can no longer be changed. Issued tax invoices and converted documents are locked.",
+    "alreadyIssued": "This invoice is already issued. Refresh the page to see it.",
+    "alreadyConverted": "This document was already converted. Open it from the link on this page.",
+    "cannotConvert": "This document cannot be converted that way.",
+    "sellerVatMissing": "Add your company's VAT number in Company settings before issuing a tax invoice.",
+    "issueBeforePayment": "Issue the invoice first, then record payments.",
+    "qrValueTooLong": "Your company name is too long for the invoice QR code. Shorten the name in Company settings.",
+    "creditTooLarge": "This credit note is more than what is left to credit on the invoice. Lower the amounts.",
+    "creditNeedsIssuedInvoice": "A credit note can only be made for an issued tax invoice.",
+    "entryAutomatic": "This entry is created automatically. Change it where it comes from (the invoice or salary sheet).",
+    "entryVoided": "This entry is voided and can no longer be changed.",
+    "categoryLocked": "This category is used by the app and cannot be archived. You can rename it.",
+    "paymentHasRefund": "A refund on this invoice depends on this payment. Void the refund in Finance first, then remove the payment.",
+    "sheetLocked": "This salary sheet is approved and locked. The owner can reopen it to make changes.",
+    "sheetEmpty": "This salary sheet has no workers. Add workers or upload a timesheet first.",
+    "sheetNotApproved": "This salary sheet is not approved, so there is nothing to reopen.",
+    "noWorkersForSheet": "No active workers to add. Every active worker is already on a salary sheet for this month, or there are no workers yet.",
+    "timesheetNothingValid": "No row is ready. Fix the errors in Excel and upload the file again.",
+    "timesheetWorkerOnOtherSheet": "Some workers are already on another salary sheet for this month. Check the file again.",
+    "chooseMonth": "Choose the month for this salary sheet.",
+    "approveBeforePaying": "Approve the salary sheet first, then mark workers as paid.",
+    "sheetHasPaidWorkers": "Some workers are marked as paid. Undo the paid marks first, then reopen the sheet.",
+    "invalidPaidDate": "Choose the date the salary was paid.",
+    "renewTooEarly": "Your plan is already paid. You can renew from 14 days before it ends.",
+    "paymentUnavailable": "The payment page could not be opened. Please try again in a few minutes, or contact us on WhatsApp."
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
@@ -208,22 +279,30 @@
     "choosePlan": "Choose a plan",
     "readOnlyTitle": "Read-only mode",
     "readOnlyBody": "Your trial or subscription has ended. Your data is safe and you can still view and export it. Choose a plan to make changes again.",
-    "pastDue": "Your last payment did not go through. Please update your payment to avoid read-only mode.",
+    "pastDue": "Your plan has ended and is not renewed yet. Renew within 3 days to avoid read-only mode.",
     "exportData": "Export data"
   },
   "billing": {
     "title": "Plan & billing",
-    "subtitle": "Your current plan and trial.",
+    "subtitle": "Your plan, payments and tax invoices.",
     "status": {
       "trialing": "Free trial",
       "active": "Active",
-      "past_due": "Payment due",
+      "past_due": "Renewal due",
       "expired": "Read-only"
     },
     "trialEnds": "Trial ends on {date}.",
     "endedOn": "Ended on {date}.",
-    "renewsOn": "Renews on {date}.",
-    "plans": "Plans",
+    "renewsOn": "Paid until {date}.",
+    "graceUntil": "Renew before {date} to avoid read-only mode.",
+    "currentPlan": "{plan} plan · {cycle}",
+    "noPlan": "No paid plan yet",
+    "scheduled": "From {date}: {plan} plan, {cycle} (already paid).",
+    "usage": "Usage",
+    "workersUsage": "Workers",
+    "invoicesUsage": "Invoices this month",
+    "overLimit": "You are above your plan's limit. Everything keeps working; please move to a bigger plan at your next renewal.",
+    "plans": "Choose your plan",
     "perMonth": "/ month",
     "exVat": "Prices exclude 15% VAT.",
     "workersUpTo": "Up to {count} workers",
@@ -233,13 +312,84 @@
       "PRO": "Pro",
       "BUSINESS": "Business"
     },
-    "comingSoon": "Online card and mada payment is coming soon. To subscribe today, message us on WhatsApp.",
-    "whatsapp": "Subscribe on WhatsApp",
-    "ownerOnly": "Only the owner can manage billing."
+    "cycles": {
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "YEARLY": "Yearly"
+    },
+    "cycleNote": {
+      "MONTHLY": "Billed every month",
+      "QUARTERLY": "Billed every 3 months",
+      "YEARLY": "Billed once a year"
+    },
+    "billedAs": "{amount} billed {cycle, select, MONTHLY {monthly} QUARTERLY {every 3 months} other {yearly}}",
+    "twoMonthsFree": "2 months free",
+    "youSave": "You save {amount}",
+    "suggested": "Fits your usage",
+    "popular": "Most popular",
+    "select": "Continue with {plan}",
+    "renewOpens": "You can renew from {date}.",
+    "ownerOnly": "Only the owner can manage billing.",
+    "whatsapp": "Questions? WhatsApp us",
+    "testMode": "Test mode: payments are simulated and no money is taken.",
+    "invoices": "Tax invoices",
+    "noInvoices": "Your tax invoices will appear here after your first payment.",
+    "invoiceNo": "Invoice",
+    "date": "Date",
+    "period": "Period",
+    "amount": "Amount",
+    "download": "PDF",
+    "downloadAr": "PDF (Arabic)",
+    "view": "View",
+    "noAutoCharge": "No automatic charges. We email you 7 days and 1 day before your plan ends, and you renew with one click.",
+    "checkout": {
+      "title": "Review and pay",
+      "back": "Change plan",
+      "plan": "Plan",
+      "cycle": "Billing cycle",
+      "period": "Period",
+      "startsLater": "Starts on {date}, right after your current {kind, select, trial {free trial} other {plan}} ends.",
+      "listPrice": "{months} months at {price}",
+      "freeMonths": "2 months free",
+      "subtotal": "Subtotal (excl. VAT)",
+      "vat": "VAT 15%",
+      "total": "Total to pay",
+      "pay": "Pay {amount}",
+      "methods": "mada, Visa, Mastercard and Apple Pay. Payments are processed securely by our payment provider; we never see your card number.",
+      "invoiceNote": "A ZATCA-compliant tax invoice is issued to {company} right after payment.",
+      "vatHint": "Add your VAT number in company settings first if you need it on the invoice.",
+      "terms": "By paying you agree to the <terms>Terms</terms> and <refund>Refund Policy</refund>."
+    },
+    "return": {
+      "paidTitle": "Payment received",
+      "paidBody": "Thank you. Your {plan} plan is active until {date}.",
+      "invoice": "Download tax invoice",
+      "pendingTitle": "Waiting for confirmation",
+      "pendingBody": "We have not received confirmation from the payment provider yet. This usually takes less than a minute.",
+      "refresh": "Check again",
+      "failedTitle": "Payment did not go through",
+      "failedBody": "No money was taken. You can try again with another card.",
+      "tryAgain": "Try again",
+      "expiredTitle": "This payment link has expired",
+      "toBilling": "Back to billing"
+    },
+    "testPay": {
+      "title": "Test payment page",
+      "body": "This page stands in for the payment provider while the app runs in test mode. No card is needed and no money moves.",
+      "amount": "Amount",
+      "pay": "Pay (test)",
+      "decline": "Decline (test)"
+    },
+    "per": {
+      "MONTHLY": "/ month",
+      "QUARTERLY": "/ 3 months",
+      "YEARLY": "/ year"
+    },
+    "cycleGroup": "Billing cycle"
   },
   "dashboard": {
     "welcome": "Welcome, {name}",
-    "subtitle": "Here is what to do next.",
+    "subtitle": "{date}",
     "setup": {
       "title": "Finish setting up your company",
       "progress": "{done} of {total} done",
@@ -249,9 +399,55 @@
       "bank": "Bank details",
       "team": "Invite your accountant"
     },
-    "next": {
-      "title": "Coming next",
-      "body": "Clients, sites, workforce, invoices and salary sheets will appear here."
+    "receivables": {
+      "title": "To collect",
+      "unpaid": "{count, plural, =0 {No unpaid invoices} one {# unpaid invoice} other {# unpaid invoices}}",
+      "overdue": "{count, plural, one {# overdue} other {# overdue}}: {amount}",
+      "view": "View unpaid invoices",
+      "viewOverdue": "View overdue invoices",
+      "create": "Create an invoice"
+    },
+    "pending": {
+      "title": "Pending invoices",
+      "subtitle": "Waiting for your next step",
+      "none": "Nothing waiting. Every offer is invoiced.",
+      "draftInvoices": "{count, plural, one {# draft invoice to issue} other {# draft invoices to issue}}",
+      "openProformas": "{count, plural, one {# proforma to invoice} other {# proformas to invoice}}",
+      "openQuotations": "{count, plural, one {# quotation awaiting reply} other {# quotations awaiting reply}}",
+      "viewSales": "Open sales",
+      "createQuote": "Create a quotation"
+    },
+    "salaries": {
+      "title": "Unpaid salaries",
+      "none": "All approved salaries are paid.",
+      "sheets": "{count, plural, one {Approved on # salary sheet, not yet paid} other {Approved on # salary sheets, not yet paid}}",
+      "pay": "Mark salaries as paid",
+      "view": "Open salaries"
+    },
+    "month": {
+      "title": "{month}",
+      "profit": "Profit this month",
+      "loss": "Loss this month",
+      "lastMonth": "last month {amount}",
+      "income": "Income",
+      "expense": "Expenses",
+      "note": "Money received and paid, without VAT.",
+      "report": "Full report"
+    },
+    "expiring": {
+      "title": "Expiring documents",
+      "none": "No Iqama or passport expires in the next 30 days.",
+      "count": "{count, plural, one {# document needs attention} other {# documents need attention}}",
+      "expired": "{count} expired",
+      "viewAll": "View all",
+      "noWorkers": "Add your workers to get reminders before their Iqama or passport expires.",
+      "addWorker": "Add a worker"
+    },
+    "sites": {
+      "title": "Active sites",
+      "workers": "{count, plural, =0 {No active workers} one {# active worker} other {# active workers}}",
+      "add": "Add a site",
+      "profit": "Profit by site"
     }
   },
   "export": {
@@ -272,6 +468,44 @@
       "body": "{inviter} invited you to join {org} as {role}. The invitation works for 7 days.",
       "cta": "Accept invitation",
       "footer": "If you were not expecting this, you can ignore this email."
+    },
+    "expiry": {
+      "subject": "{count, plural, one {# worker document expires soon} other {# worker documents expire soon}} · {org}",
+      "heading": "Documents expiring soon",
+      "body": "These Iqama and passport dates in {org} need attention:",
+      "cta": "Open workforce",
+      "footer": "You get this email because you are a member of {org}. Reminders are sent 30, 14, 7 and 1 days before expiry, and on the day.",
+      "line": "{name}: {document} {when}",
+      "expiredLine": "expired on {date}",
+      "expiresLine": "expires on {date}"
+    },
+    "billingPaid": {
+      "subject": "Payment received · invoice {number}",
+      "heading": "Thank you, your payment is confirmed",
+      "body": "We received {amount} for the {plan} plan. Your tax invoice {number} is ready to download on the billing page.",
+      "cta": "Open billing",
+      "footer": "Keep this email for your records."
+    },
+    "trialEnding": {
+      "subject": "Your free trial for {org} ends in {days, plural, one {# day} other {# days}}",
+      "heading": "Your free trial ends soon",
+      "body": "The free trial for {org} ends on {date}. Choose a plan to keep adding invoices, workers and salary sheets. Your data stays safe either way.",
+      "cta": "Choose a plan",
+      "footer": "You get this email because you own {org}."
+    },
+    "renewal": {
+      "subject": "{org}: your {plan} plan ends in {days, plural, one {# day} other {# days}}",
+      "heading": "Time to renew your plan",
+      "body": "The {plan} plan for {org} ends on {date}. Payments are not taken automatically: renew on the billing page to keep working without interruption.",
+      "cta": "Renew now",
+      "footer": "You get this email because you own {org}. Reminders are sent 7 days and 1 day before your plan ends."
+    },
+    "readOnly": {
+      "subject": "{org} is now read-only",
+      "heading": "Your company is now read-only",
+      "body": "The trial or plan for {org} has ended. Nothing was deleted: you can still view and export all your data. Choose a plan to make changes again.",
+      "cta": "Choose a plan",
+      "footer": "You get this email because you own {org}."
     }
   },
   "verify": {
@@ -285,9 +519,943 @@
     "change": "Wrong number? Change it",
     "enterPhone": "Enter your mobile number to receive a 6-digit code.",
     "sendCode": "Send code",
-    "verifyFirst": "Verify your mobile number to continue"
+    "verifyFirst": "Verify your mobile number to continue",
+    "demoCode": "Demo mode: no SMS is sent. Your code is {code}."
   },
   "sms": {
     "code": "{brand} code: {code}. Valid for 10 minutes. Do not share it with anyone."
+  },
+  "list": {
+    "search": "Search",
+    "active": "Active",
+    "archived": "Archived",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pageCount} · {total} total",
+    "pages": "Pages",
+    "noResults": "Nothing matches your search.",
+    "clearSearch": "Clear search",
+    "exportExcel": "Export to Excel",
+    "importExcel": "Import from Excel"
+  },
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Companies you supply workers to and invoice.",
+    "add": "Add client",
+    "newTitle": "New client",
+    "searchPlaceholder": "Search by name, contact, VAT or city",
+    "empty": {
+      "title": "No clients yet",
+      "body": "Add the companies you supply workers to. You will pick them when you create invoices and sites."
+    },
+    "emptyArchived": "No archived clients.",
+    "sections": {
+      "company": "Company",
+      "contact": "Contact",
+      "address": "Address",
+      "notes": "Notes"
+    },
+    "fields": {
+      "nameEn": "Client name (English)",
+      "nameAr": "Client name (Arabic)",
+      "vatNumber": "VAT number",
+      "crNumber": "CR number",
+      "contactName": "Contact person",
+      "phone": "Phone",
+      "email": "Email",
+      "addressLine": "Address",
+      "city": "City",
+      "postalCode": "Postal code",
+      "notes": "Notes"
+    },
+    "vatHint": "Needed on tax invoices if the client is VAT registered.",
+    "sites": "Sites",
+    "sitesCount": "{count, plural, =0 {No sites} one {# site} other {# sites}}",
+    "addSite": "Add site",
+    "noSites": "No sites for this client yet. Add the locations where your workers go.",
+    "saved": "Client saved.",
+    "archiveConfirm": "Archive this client and its sites? Nothing is deleted and you can restore it later.",
+    "archivedNote": "This client is archived. Restore it to use it again.",
+    "documents": "Quotations and invoices",
+    "newInvoice": "New invoice",
+    "newQuotation": "New quotation",
+    "noDocuments": "No quotations or invoices for this client yet."
+  },
+  "sites": {
+    "title": "Sites",
+    "subtitle": "Work locations of your clients.",
+    "add": "Add site",
+    "newTitle": "New site",
+    "searchPlaceholder": "Search by site, client or city",
+    "empty": {
+      "title": "No sites yet",
+      "body": "A site is a client's work location. Add a client first, then its sites."
+    },
+    "needClient": "Add a client first. Every site belongs to a client.",
+    "emptyArchived": "No archived sites.",
+    "fields": {
+      "client": "Client",
+      "name": "Site name",
+      "city": "City",
+      "address": "Address",
+      "notes": "Notes"
+    },
+    "allClients": "All clients",
+    "workersCount": "{count, plural, =0 {No workers} one {# worker} other {# workers}}",
+    "archiveConfirm": "Archive this site? Workers keep it in their history. You can restore it later.",
+    "archivedNote": "This site is archived. Restore it to use it again.",
+    "viewWorkers": "View workers"
+  },
+  "workers": {
+    "title": "Workforce",
+    "subtitle": "Your workers, their salaries and document expiry dates.",
+    "add": "Add worker",
+    "newTitle": "New worker",
+    "searchPlaceholder": "Search by name, job, nationality, mobile or Iqama",
+    "empty": {
+      "title": "No workers yet",
+      "body": "Add workers one by one, or import them all from Excel in one go."
+    },
+    "emptyArchived": "No archived workers.",
+    "saved": "Worker saved.",
+    "sections": {
+      "personal": "Worker",
+      "work": "Site and salary",
+      "documents": "Documents"
+    },
+    "fields": {
+      "name": "Full name",
+      "nameAr": "Name (Arabic)",
+      "iqamaNumber": "Iqama number",
+      "nationality": "Nationality",
+      "jobTitle": "Job title",
+      "phone": "Mobile",
+      "site": "Site",
+      "basicSalary": "Basic salary (SAR)",
+      "housingAllowance": "Housing allowance (SAR)",
+      "transportAllowance": "Transport allowance (SAR)",
+      "otherAllowance": "Other allowance (SAR)",
+      "iqamaExpiry": "Iqama expiry",
+      "passportNumber": "Passport number",
+      "passportExpiry": "Passport expiry"
+    },
+    "monthlyTotal": "Monthly total",
+    "noSite": "No site",
+    "allSites": "All sites",
+    "withoutSite": "Without a site",
+    "keepNumber": "Saved as {masked}. Leave empty to keep it.",
+    "clearPassport": "Remove the saved passport number",
+    "show": "Show",
+    "hide": "Hide",
+    "revealNote": "Viewing a full number is recorded in the activity log.",
+    "expiry": {
+      "all": "All documents",
+      "soon": "Expiring in 30 days or expired",
+      "expired": "Expired",
+      "expiredOn": "Expired {date}",
+      "expiresIn": "{days, plural, =0 {Expires today} one {Expires tomorrow} other {In # days}}",
+      "ok": "Valid until {date}"
+    },
+    "docs": {
+      "iqama": "Iqama",
+      "passport": "Passport"
+    },
+    "saveAndAdd": "Save and add another",
+    "archiveConfirm": "Archive this worker? Their records stay and you can restore them later.",
+    "archivedNote": "This worker is archived. Restore them to include them again.",
+    "columns": {
+      "worker": "Worker",
+      "site": "Site",
+      "salary": "Monthly total",
+      "documents": "Documents"
+    }
+  },
+  "import": {
+    "title": {
+      "clients": "Import clients",
+      "sites": "Import sites",
+      "workers": "Import workers"
+    },
+    "subtitle": "Three steps: download the template, fill it in, upload it. You will see a preview before anything is saved.",
+    "step1": "1. Download the Excel template",
+    "step1Help": "Keep the column headers. Columns marked Required must be filled in.",
+    "template": "Download template",
+    "step2": "2. Upload the filled file",
+    "choose": "Choose Excel file",
+    "noFile": "No file chosen",
+    "check": "Check file",
+    "checking": "Checking…",
+    "summary": "{valid, plural, one {# row is ready} other {# rows are ready}}. {errors, plural, =0 {No errors.} one {# row has errors and will be skipped.} other {# rows have errors and will be skipped.}}",
+    "fixHint": "Fix the red cells in Excel and upload again, or import the ready rows now.",
+    "importRows": "{count, plural, one {Import # row} other {Import # rows}}",
+    "importing": "Importing…",
+    "startOver": "Upload another file",
+    "done": "{imported, plural, one {# row imported} other {# rows imported}}.",
+    "doneSkipped": "{skipped, plural, one {# row with errors was skipped.} other {# rows with errors were skipped.}}",
+    "viewList": "Go to the list",
+    "row": "Row",
+    "status": "Status",
+    "ok": "Ready",
+    "hasErrors": "Error",
+    "nothingValid": "No row is ready to import. Fix the errors in Excel and upload the file again.",
+    "sitesNeedClients": "Sites are matched to clients by the client name, so import or add clients first.",
+    "workersNeedSites": "Workers are matched to sites by site name. The Site and Client columns are optional."
+  },
+  "sales": {
+    "title": "Sales",
+    "search": "Search",
+    "searchPlaceholder": "Search by number or client",
+    "noResults": "Nothing matches.",
+    "clearFilters": "Show all",
+    "draftNumber": "Draft",
+    "balanceShort": "{amount} due",
+    "editTitle": "Edit {name}",
+    "createdFrom": "Created from",
+    "convertedTo": "Converted to",
+    "draftInvoiceNote": "This invoice is a draft. Issue it to give it an invoice number, today's date and the QR code. After that it cannot be changed.",
+    "vatMissingNote": "Your company's VAT number is missing, so this invoice cannot be issued yet.",
+    "addVat": "Add VAT number",
+    "qrLabel": "Invoice QR code",
+    "types": {
+      "quotations": {
+        "singular": "Quotation",
+        "plural": "Quotations",
+        "subtitle": "Price offers for your clients. Convert one to an invoice in one click.",
+        "new": "New quotation",
+        "newSubtitle": "Add the client and the items. You can convert it to an invoice later.",
+        "emptyTitle": "No quotations yet",
+        "emptyBody": "Send a price offer to a client, then turn it into a proforma or tax invoice with one click.",
+        "draftName": "quotation"
+      },
+      "proformas": {
+        "singular": "Proforma invoice",
+        "plural": "Proformas",
+        "subtitle": "Request advance payment before the tax invoice.",
+        "new": "New proforma",
+        "newSubtitle": "A proforma is not a tax invoice. Convert it when the work is done or paid.",
+        "emptyTitle": "No proforma invoices yet",
+        "emptyBody": "Create one here, or convert a quotation into a proforma.",
+        "draftName": "proforma"
+      },
+      "invoices": {
+        "singular": "Tax invoice",
+        "plural": "Invoices",
+        "subtitle": "Tax invoices with VAT 15% and QR code.",
+        "new": "New invoice",
+        "newSubtitle": "Save as a draft, check it, then issue it.",
+        "emptyTitle": "No invoices yet",
+        "emptyBody": "Create your first tax invoice. It takes less than a minute.",
+        "draftName": "draft invoice"
+      },
+      "credit-notes": {
+        "singular": "Credit note",
+        "plural": "Credit notes",
+        "subtitle": "Correct or cancel an issued tax invoice. The invoice itself never changes.",
+        "new": "New credit note",
+        "newSubtitle": "Lower the items to what you are crediting, add the reason, save, then issue.",
+        "emptyTitle": "No credit notes yet",
+        "emptyBody": "To correct an issued invoice, open it and choose \"Create credit note\".",
+        "draftName": "draft credit note"
+      }
+    },
+    "kinds": {
+      "standard": "Tax invoice",
+      "simplified": "Simplified tax invoice"
+    },
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "converted": "Converted",
+      "partial": "Partly paid",
+      "paid": "Paid",
+      "due": "Overdue",
+      "credited": "Credited"
+    },
+    "filters": {
+      "all": "All",
+      "draft": "Drafts",
+      "sent": "Sent",
+      "converted": "Converted",
+      "unpaid": "Unpaid",
+      "due": "Overdue",
+      "paid": "Paid"
+    },
+    "summary": {
+      "outstanding": "To collect",
+      "unpaidCount": "{count, plural, one {# unpaid invoice} other {# unpaid invoices}}",
+      "overdue": "Overdue invoices",
+      "overdueHint": "Past the due date and not fully paid"
+    },
+    "fields": {
+      "client": "Client",
+      "site": "Site",
+      "issueDate": "Date",
+      "issuedAt": "Issued",
+      "dueDate": "Due date",
+      "validUntil": "Valid until",
+      "description": "Description",
+      "descriptionAr": "Description in Arabic",
+      "quantity": "Qty",
+      "unitPrice": "Unit price (SAR)",
+      "amount": "Amount",
+      "discount": "Discount",
+      "discountPercent": "Discount (%)",
+      "discountAmount": "Discount (SAR)",
+      "notes": "Notes",
+      "terms": "Terms and conditions",
+      "buyerVat": "Client VAT number",
+      "reason": "Reason"
+    },
+    "discount": {
+      "NONE": "No discount",
+      "PERCENT": "Percent (%)",
+      "AMOUNT": "Amount (SAR)"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "vat": "VAT {rate}%",
+      "total": "Total"
+    },
+    "form": {
+      "client": "Client and dates",
+      "chooseClient": "Choose a client",
+      "noSite": "No site",
+      "noSites": "This client has no sites",
+      "invoiceDateHint": "The invoice date and time are set when you issue it.",
+      "items": "Items",
+      "showArabic": "Arabic descriptions",
+      "itemNo": "Item {n}",
+      "removeItem": "Remove item {n}",
+      "addItem": "Add item",
+      "descriptionPlaceholder": "For example: Helpers – November, 26 days",
+      "notesTerms": "Notes and terms",
+      "create": {
+        "quotations": "Save quotation",
+        "proformas": "Save proforma",
+        "invoices": "Save draft invoice",
+        "credit-notes": "Save draft credit note"
+      },
+      "noClientsTitle": "Add a client first",
+      "noClientsBody": "Every document is issued to a client. Add your client, then come back here.",
+      "addClient": "Add client"
+    },
+    "actions": {
+      "issue": "Issue invoice",
+      "toInvoice": "Convert to tax invoice",
+      "toProforma": "Convert to proforma",
+      "markSent": "Mark as sent",
+      "deleteDraft": "Delete draft",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this draft?",
+      "printEn": "Print (English)",
+      "printAr": "Print (Arabic)",
+      "pdfEn": "PDF English",
+      "pdfAr": "PDF Arabic",
+      "issueCredit": "Issue credit note"
+    },
+    "done": {
+      "saved": "Saved.",
+      "sent": "Marked as sent.",
+      "issued": "Issued. It now has its number and QR code.",
+      "converted": "Converted. Check the details below.",
+      "paid": "Payment recorded.",
+      "paymentDeleted": "Payment removed.",
+      "deleted": "Draft deleted.",
+      "refund": "Refund recorded. It is saved in Finance as negative income."
+    },
+    "payments": {
+      "title": "Payments",
+      "paidOf": "Paid {paid} of {total}",
+      "balance": "{amount} due",
+      "none": "No payments yet.",
+      "amount": "Amount (SAR)",
+      "paidOn": "Date received",
+      "method": "Method",
+      "reference": "Reference",
+      "referenceHint": "optional, e.g. transfer number",
+      "add": "Record payment",
+      "saving": "Saving…",
+      "deleteConfirm": "Remove this payment?",
+      "fullyPaid": "Fully paid.",
+      "credited": "credited {amount}",
+      "fullyCredited": "Fully credited."
+    },
+    "methods": {
+      "BANK_TRANSFER": "Bank transfer",
+      "CASH": "Cash",
+      "CHEQUE": "Cheque",
+      "CARD": "Card",
+      "OTHER": "Other"
+    },
+    "credit": {
+      "title": "Credit notes",
+      "create": "Create credit note",
+      "none": "No credit notes. Use one to correct or cancel this invoice.",
+      "forInvoice": "Credit note for invoice {number}",
+      "forInvoiceLabel": "Credit note for invoice",
+      "maxCredit": "up to {amount} can be credited",
+      "reasonPlaceholder": "For example: 2 days not worked, wrong price",
+      "hint": "The items below are copied from the invoice. Lower or remove them so the total is what you are crediting.",
+      "tooLarge": "The total is more than the {amount} that can still be credited.",
+      "draftNote": "This credit note is a draft. Issue it to give it a number and the QR code; the invoice balance goes down then. After that it cannot be changed.",
+      "pickInvoiceTitle": "Start from an invoice",
+      "pickInvoiceBody": "A credit note always corrects an issued tax invoice. Open the invoice and choose \"Create credit note\".",
+      "goToInvoices": "Go to invoices"
+    }
+  },
+  "finance": {
+    "title": "Finance",
+    "tabs": {
+      "transactions": "Income & expenses",
+      "reports": "Reports",
+      "categories": "Categories"
+    },
+    "subtitle": "Money in and out. Invoice payments are added automatically.",
+    "addIncome": "Add income",
+    "addExpense": "Add expense",
+    "newIncome": "New income",
+    "newExpense": "New expense",
+    "editTitle": "Edit entry",
+    "searchPlaceholder": "Search description, reference, client or site",
+    "kinds": {
+      "INCOME": "Income",
+      "EXPENSE": "Expense"
+    },
+    "kindFilter": {
+      "all": "All",
+      "INCOME": "Income",
+      "EXPENSE": "Expenses"
+    },
+    "allCategories": "All categories",
+    "allSites": "All sites",
+    "noSite": "No site (company overhead)",
+    "voided": "Voided",
+    "showVoided": "Show voided",
+    "hideVoided": "Back to active entries",
+    "totals": {
+      "income": "Income",
+      "expense": "Expenses",
+      "net": "Net",
+      "inclVat": "incl. VAT"
+    },
+    "emptyTitle": "No income or expenses yet",
+    "emptyBody": "Payments you record on invoices appear here by themselves. Add expenses like rent, food or transport to see your real profit.",
+    "noResults": "Nothing matches these filters.",
+    "clearFilters": "Clear filters",
+    "sources": {
+      "MANUAL": "Entered by hand",
+      "INVOICE_PAYMENT": "Invoice payment",
+      "INVOICE_REFUND": "Refund to client",
+      "SALARY_SHEET": "Salary sheet"
+    },
+    "fields": {
+      "amount": "Amount (SAR)",
+      "includesVat": "This amount includes 15% VAT",
+      "vatPreview": "VAT {vat} · without VAT {net}",
+      "categoryId": "Category",
+      "date": "Date",
+      "siteId": "Site",
+      "siteHint": "Choose a site to see it in the site profit report.",
+      "method": "Paid by",
+      "description": "Description",
+      "reference": "Reference",
+      "referenceHint": "e.g. receipt or transfer number",
+      "more": "More details",
+      "noMethod": "Not set",
+      "client": "Client",
+      "vat": "VAT",
+      "net": "Without VAT",
+      "createdBy": "Recorded",
+      "voidReason": "Reason",
+      "source": "Source"
+    },
+    "save": {
+      "INCOME": "Save income",
+      "EXPENSE": "Save expense"
+    },
+    "done": {
+      "saved": "Saved.",
+      "voided": "Entry voided. It no longer counts in totals and reports.",
+      "refund": "Refund recorded as negative income."
+    },
+    "auto": {
+      "INVOICE_PAYMENT": "This income was added automatically from a payment on invoice {number}. To change it, change the payment on the invoice.",
+      "INVOICE_REFUND": "This is money paid back to the client on invoice {number}.",
+      "SALARY_SHEET": "This expense comes from an approved salary sheet."
+    },
+    "openInvoice": "Open invoice",
+    "void": {
+      "button": "Void entry",
+      "title": "Entered by mistake?",
+      "body": "Voiding removes it from totals and reports. It stays visible under \"Show voided\" for your records.",
+      "confirm": "Void this entry?",
+      "confirmButton": "Void",
+      "reasonPlaceholder": "Optional, e.g. entered twice"
+    },
+    "voidedOn": "Voided on {date}",
+    "export": "Export to Excel",
+    "categories": {
+      "title": "Categories",
+      "subtitle": "Group your income and expenses. Archived categories keep their old entries.",
+      "income": "Income categories",
+      "expense": "Expense categories",
+      "add": "Add category",
+      "kind": "Type",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "entries": "{count, plural, =0 {No entries} one {# entry} other {# entries}}",
+      "locked": "Used by the app",
+      "rename": "Rename",
+      "added": "Category added."
+    },
+    "reports": {
+      "title": "Reports",
+      "subtitle": "Cash basis: money received and paid in the period. Amounts are without VAT.",
+      "period": "Period",
+      "presets": {
+        "this-month": "This month",
+        "last-month": "Last month",
+        "this-quarter": "This quarter",
+        "this-year": "This year",
+        "last-year": "Last year",
+        "all": "All time",
+        "custom": "Custom"
+      },
+      "from": "From",
+      "to": "To",
+      "apply": "Show",
+      "income": "Income",
+      "expense": "Expenses",
+      "profit": "Profit",
+      "loss": "Loss",
+      "margin": "Margin {percent}",
+      "byCategory": "By category",
+      "noIncome": "No income in this period.",
+      "noExpense": "No expenses in this period.",
+      "vatTitle": "VAT in these entries",
+      "vatCollected": "VAT on income",
+      "vatPaid": "VAT on expenses",
+      "vatNet": "Difference",
+      "vatNote": "For a quick check only. Your VAT return must follow ZATCA rules (accrual dates, all invoices issued), so confirm with your accountant.",
+      "sites": "Profit by site",
+      "sitesSubtitle": "Income from invoice payments and entries for each site, minus that site's expenses (salaries, accommodation, transport…).",
+      "site": "Site",
+      "overhead": "Company overhead (no site)",
+      "total": "Total",
+      "emptyTitle": "No entries in this period",
+      "emptyBody": "Record payments on invoices or add expenses, then come back for your profit.",
+      "seeEntries": "See entries"
+    },
+    "refund": {
+      "title": "Money owed back to the client",
+      "body": "Paid and credited together are more than the invoice total. When you pay the client back, record it here. It is saved as negative income.",
+      "due": "{amount} to pay back",
+      "amount": "Refund amount (SAR)",
+      "date": "Date paid",
+      "method": "Paid by",
+      "reference": "Reference",
+      "add": "Record refund",
+      "list": "Refunds",
+      "refunded": "Refunded {amount}"
+    },
+    "openSalarySheet": "Open salary sheet"
+  },
+  "payroll": {
+    "title": "Salaries",
+    "subtitle": "Monthly salary sheets from your timesheet, with payslips.",
+    "tabs": {
+      "sheets": "Salary sheets",
+      "settings": "Payroll rules"
+    },
+    "newSheet": "New salary sheet",
+    "sheetTitle": "Salaries {month}",
+    "searchPlaceholder": "Search worker name, Iqama last 4 or site",
+    "allYears": "All years",
+    "allStatuses": "All statuses",
+    "allSites": "All sites",
+    "noSite": "No site",
+    "apply": "Apply",
+    "noResults": "No salary sheet matches these filters.",
+    "clearFilters": "Clear filters",
+    "emptyTitle": "No salary sheets yet",
+    "emptyBody": "Download the timesheet for a month, fill in absences and overtime, and upload it. The salaries are calculated for you.",
+    "workerCount": "{count, plural, one {# worker} other {# workers}}",
+    "status": {
+      "DRAFT": "Draft",
+      "APPROVED": "Approved"
+    },
+    "fields": {
+      "month": "Month",
+      "site": "Site",
+      "year": "Year",
+      "status": "Status",
+      "absentDays": "Unpaid absent days",
+      "overtimeHours": "Overtime hours",
+      "additions": "Bonus / additions (SAR)",
+      "advances": "Advance to deduct (SAR)",
+      "deductions": "Other deductions (SAR)",
+      "notes": "Notes",
+      "netPay": "Net pay",
+      "totalNet": "Total net pay",
+      "sheetNotes": "Notes for this sheet"
+    },
+    "totals": {
+      "gross": "Salaries (gross)",
+      "overtimeAndAdditions": "Overtime and additions",
+      "deductions": "Deductions",
+      "net": "Net pay"
+    },
+    "wizard": {
+      "subtitle": "Three steps: download the timesheet, fill it in, upload it. You will see every salary before anything is saved.",
+      "step1": "1. Download the timesheet",
+      "step1Help": "Choose the month. The file already lists your active workers; choose a site to get only its workers.",
+      "replaceTitle": "Upload the timesheet again",
+      "replaceHelp": "The file lists the workers of {sheet} with what is already entered. Uploading it replaces the workers on this draft.",
+      "download": "Download timesheet",
+      "step2": "2. Upload the filled file",
+      "step2Help": "Fill in the blue columns: absences, overtime, bonus, advances and deductions. Empty means 0.",
+      "step3": "3. Check and create",
+      "summary": "{valid, plural, one {# worker is ready} other {# workers are ready}}. {errors, plural, =0 {No errors.} one {# row has errors and will be skipped.} other {# rows have errors and will be skipped.}}",
+      "netTotal": "Total net pay {amount}.",
+      "fixHint": "Fix the red cells in Excel and upload again, or continue with the ready rows and add the others on the next page.",
+      "create": "{count, plural, one {Create salary sheet with # worker} other {Create salary sheet with # workers}}",
+      "replace": "{count, plural, one {Replace with # worker} other {Replace with # workers}}",
+      "creating": "Creating…",
+      "noExcelTitle": "No Excel?",
+      "noExcelHelp": "Start a sheet with all active workers for this month (and site) and type absences and overtime on the next page.",
+      "noExcelButton": "Start with all workers"
+    },
+    "draftTitle": "Check, then approve",
+    "draftHelp": "Open a worker to change absences, overtime, advances or deductions. Approving locks the sheet and adds the salaries to Finance as expenses, per site.",
+    "draftReadOnly": "This salary sheet is a draft. It can be changed again when your company is active.",
+    "uploadAgain": "Upload timesheet again",
+    "addMissing": "Add missing workers",
+    "refresh": "Update salaries from Workforce",
+    "refreshHelp": "Changed a salary, allowance or site under Workforce, or the payroll rules? \"Update salaries from Workforce\" takes the new values and keeps what you entered here.",
+    "approve": {
+      "button": "Approve salary sheet",
+      "explain": "Total net pay {total}. After approval the sheet is locked and this amount is added to Finance as \"Salaries\" expenses on the salary date, one per site. You mark workers as paid on the next step.",
+      "payDate": "Salary date (used in Finance)",
+      "confirm": "Approve and record expenses",
+      "pending": "Approving…"
+    },
+    "approvedInfo": "Approved {date}. The net pay is recorded in Finance as Salaries expenses, per site.",
+    "openFinance": "See the expenses",
+    "downloads": "Download and print",
+    "downloadExcel": "Salary sheet (Excel)",
+    "downloadSheetPdf": "Salary sheet PDF",
+    "downloadPayslips": "All payslips PDF",
+    "printView": "Print view",
+    "workersTitle": "Workers",
+    "searchWorker": "Find a worker",
+    "noWorkerMatch": "No worker on this sheet matches.",
+    "noLines": "No workers on this sheet yet. Use \"Add missing workers\" or upload the timesheet.",
+    "payslip": "Payslip",
+    "lineSummary": {
+      "gross": "Salary {amount}",
+      "absent": "{days} days absent",
+      "overtime": "{hours} h overtime"
+    },
+    "saveLine": "Save",
+    "saving": "Saving…",
+    "lineSaved": "Saved. The salary was recalculated.",
+    "notesSaved": "Notes saved.",
+    "removeLine": "Remove from this sheet",
+    "removeLineConfirm": "Remove this worker from the salary sheet?",
+    "deleteDraft": "Delete draft",
+    "deleteDraftConfirm": "Delete this draft salary sheet? Nothing was recorded in Finance yet.",
+    "reopen": "Reopen for changes",
+    "reopenConfirm": "Reopen? Its expenses are taken out of Finance until you approve it again.",
+    "reopenHelp": "Found a mistake? The owner can reopen the sheet. Its expenses are removed from Finance until it is approved again.",
+    "rulesTitle": "How the salaries are calculated",
+    "rulesText": "Daily rate = monthly amount ÷ {days} days. Unpaid absent days are deducted from the {absenceBase}. Overtime per hour = hourly {otBase} + {premium}% of hourly basic salary, with {hours} working hours a day. Net = salary − absence + overtime + additions − advances − deductions.",
+    "base": {
+      "BASIC": "basic salary",
+      "GROSS": "full salary (basic + allowances)"
+    },
+    "done": {
+      "imported": "{count, plural, one {Salary sheet ready with # worker.} other {Salary sheet ready with # workers.}} {skipped, plural, =0 {} one {# row with errors was skipped: use \"Add missing workers\" or upload again.} other {# rows with errors were skipped: use \"Add missing workers\" or upload again.}}",
+      "created": "Salary sheet created with all active workers. Enter absences and overtime where needed, then approve.",
+      "reopened": "Reopened. Its expenses were taken out of Finance. Approve it again when it is right.",
+      "refreshed": "Salaries updated from Workforce and the payroll rules.",
+      "removed": "Worker removed from this sheet.",
+      "added": "{count, plural, =0 {No missing workers: everyone active is already on a sheet this month.} one {# worker added.} other {# workers added.}}",
+      "deleted": "Draft salary sheet deleted.",
+      "paid": "{count, plural, =0 {Nothing changed: already marked as paid.} one {# worker marked as paid.} other {# workers marked as paid.}}",
+      "unpaid": "Paid mark removed."
+    },
+    "settings": {
+      "title": "Payroll rules",
+      "subtitle": "How absences and overtime are turned into money. Used for every new salary sheet.",
+      "legal": "These are starting values, not legal advice. Check them against the Saudi Labor Law (overtime: Article 107) and your workers' contracts, for example with your accountant or on hrsd.gov.sa, before you pay salaries.",
+      "defaults": "You are using the default rules. Save to confirm them for your company.",
+      "ownerOnly": "Only the company owner can change the payroll rules.",
+      "monthDays": "Days in a month (for the daily rate)",
+      "monthDays30": "Always 30 days",
+      "monthDaysCalendar": "Calendar days of the month (28–31)",
+      "hoursPerDay": "Working hours per day",
+      "overtimeTitle": "Overtime",
+      "overtimeBase": "Hourly wage is based on",
+      "overtimePremium": "Extra per overtime hour (% of hourly basic)",
+      "overtimePremiumHint": "Default 50",
+      "overtimeFormula": "Overtime pay per hour = hourly wage + this percent of the hourly basic salary. Example with the defaults: hourly full salary + 50% of hourly basic.",
+      "absenceBase": "Unpaid absent days are deducted from",
+      "baseGross": "Full salary (basic + allowances)",
+      "baseBasic": "Basic salary only",
+      "save": "Save rules",
+      "saving": "Saving…",
+      "saved": "Payroll rules saved. New salary sheets use them; open drafts use them after \"Update salaries from Workforce\".",
+      "appliesTo": "Approved salary sheets keep the rules they were made with.",
+      "updatedAt": "Last changed {date}"
+    },
+    "salaryDate": "salary date {date}",
+    "reopenPaidHelp": "Some workers are marked as paid. Undo the paid marks first if you need to reopen this sheet.",
+    "payment": {
+      "title": "Paying the workers",
+      "NONE": "Unpaid",
+      "PARTLY": "Partly paid",
+      "PAID": "Paid",
+      "listBadge": {
+        "NONE": "Approved · unpaid",
+        "PARTLY": "Partly paid",
+        "PAID": "Paid"
+      },
+      "summary": "{paid} of {total} paid · unpaid {unpaid}",
+      "paidOn": "Paid on",
+      "markAll": "Mark all as paid",
+      "markRest": "Mark the rest as paid",
+      "markOne": "Mark paid",
+      "paidBadge": "Paid {date}",
+      "undo": "Undo paid",
+      "undoAll": "Undo all paid marks",
+      "undoAllConfirm": "Mark every worker on this sheet as unpaid again?",
+      "help": "Mark workers as paid when they get their money (cash or bank). Unpaid salaries show on the dashboard. The payslip shows the paid date.",
+      "filterUnpaid": "Not fully paid"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Clear answers about your money, salaries and documents.",
+    "all": "All reports",
+    "export": "Download Excel",
+    "hub": {
+      "profit": {
+        "title": "Profit and loss by site",
+        "body": "Income, expenses and profit for any period, per site and category."
+      },
+      "receivables": {
+        "title": "Money to collect by client",
+        "body": "Who owes you and how late each amount is (30, 60, 90+ days)."
+      },
+      "monthly": {
+        "title": "Month by month",
+        "body": "Income, expenses and profit for the last 12 months."
+      },
+      "salaries": {
+        "title": "Unpaid salaries",
+        "body": "Approved salary sheets where workers have not been paid yet."
+      },
+      "expiring": {
+        "title": "Expiring Iqama and passports",
+        "body": "Documents that are expired or expire in the next 30 days."
+      }
+    },
+    "receivables": {
+      "title": "Money to collect by client",
+      "subtitle": "Unpaid balances on issued invoices on {date}.",
+      "emptyTitle": "Nothing to collect",
+      "emptyBody": "All issued invoices are paid. New unpaid invoices will appear here.",
+      "createInvoice": "Create an invoice",
+      "total": "Total to collect",
+      "late": "Overdue",
+      "veryLate": "Over 90 days late",
+      "invoices": "{count, plural, one {# invoice} other {# invoices}}",
+      "invoicesHeader": "Invoices",
+      "client": "Client",
+      "rowTotal": "Total",
+      "oldest": "oldest {days} days late",
+      "note": "Days late are counted from each invoice's due date. Invoices without a due date count as not due."
+    },
+    "buckets": {
+      "current": "Not due yet",
+      "d1_30": "1–30 days late",
+      "d31_60": "31–60 days",
+      "d61_90": "61–90 days",
+      "d90plus": "Over 90 days"
+    },
+    "monthly": {
+      "title": "Month by month",
+      "subtitle": "Last 12 months, money received and paid, without VAT.",
+      "emptyTitle": "No income or expenses yet",
+      "emptyBody": "Invoice payments and approved salaries appear here automatically. You can also add other expenses.",
+      "addEntry": "Add an expense",
+      "income": "Income",
+      "expense": "Expenses",
+      "profit": "Profit",
+      "loss": "Loss",
+      "month": "Month",
+      "note": "Cash basis: each amount counts in the month money came in or went out. Click a month for its full report."
+    }
+  },
+  "marketing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "contact": "Contact",
+      "signIn": "Sign in",
+      "startTrial": "Start free trial",
+      "openApp": "Open app",
+      "menu": "Menu",
+      "home": "Home",
+      "skip": "Skip to content"
+    },
+    "hero": {
+      "eyebrow": "For manpower supply and contracting companies in Saudi Arabia",
+      "title": "Invoices, workers and salaries in one simple place",
+      "subtitle": "Send tax invoices with the ZATCA QR code, keep Iqama and passport dates under control, and turn timesheets into salary sheets in three steps. In Arabic and English.",
+      "cta": "Start 7-day free trial",
+      "secondary": "See pricing",
+      "note": "No card required · Arabic and English · Your data is never deleted"
+    },
+    "preview": {
+      "label": "Product preview",
+      "invoice": "Tax invoice",
+      "client": "Al Noor Contracting",
+      "line1": "Labour supply – November",
+      "line2": "Overtime hours",
+      "vat": "VAT 15%",
+      "total": "Total",
+      "paid": "Paid",
+      "salary": "Salary sheet · November",
+      "approved": "Approved",
+      "workers": "48 workers",
+      "expiring": "3 Iqamas expire this month"
+    },
+    "trust": {
+      "qr": "ZATCA Phase 1 QR on every tax invoice",
+      "bilingual": "Arabic and English, including PDFs",
+      "safe": "Read-only, never deleted, when a plan ends"
+    },
+    "features": {
+      "title": "Everything a manpower company does every month",
+      "subtitle": "Built for owners and accountants, not for IT departments. Big buttons, few fields, clear next steps.",
+      "items": {
+        "invoices": {
+          "title": "Quotation to tax invoice",
+          "body": "Turn a quotation into a proforma and a tax invoice with one click. VAT, totals and the QR code are done for you."
+        },
+        "workforce": {
+          "title": "Workforce records",
+          "body": "Every worker with Iqama, passport, job, salary and site. Reminders before documents expire. Numbers are encrypted."
+        },
+        "salaries": {
+          "title": "Timesheet to salary sheet",
+          "body": "Download the Excel template, fill hours, upload. Overtime, allowances and deductions are calculated; approve and print payslips."
+        },
+        "finance": {
+          "title": "Income and expenses",
+          "body": "Invoice payments become income and approved salaries become expenses automatically. See profit for each site."
+        },
+        "dashboard": {
+          "title": "One clear dashboard",
+          "body": "Expiring documents, money to collect, unpaid salaries and this month's income against expenses, at a glance."
+        },
+        "excel": {
+          "title": "Excel in, Excel out",
+          "body": "Import clients, sites and workers from Excel. Export your data at any time, even after your plan ends."
+        }
+      }
+    },
+    "steps": {
+      "title": "Up and running in one afternoon",
+      "items": {
+        "one": {
+          "title": "Add your company",
+          "body": "Name, logo, VAT and CR number. Used on every invoice."
+        },
+        "two": {
+          "title": "Add clients, sites and workers",
+          "body": "Type them in or import your existing Excel sheets."
+        },
+        "three": {
+          "title": "Invoice and pay salaries",
+          "body": "Send your first tax invoice in under a minute and run this month's salaries."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Simple prices in Saudi riyals",
+      "subtitle": "Every plan has every feature. Pick by the size of your workforce. Pay yearly and get 2 months free.",
+      "cta": "Start free trial",
+      "included": "All features included",
+      "trialNote": "Start with a 7-day free trial. No card needed. Choose a plan only when you are ready.",
+      "draft": "Introductory prices, subject to change before launch."
+    },
+    "faq": {
+      "title": "Questions owners ask",
+      "items": {
+        "trial": {
+          "q": "How does the free trial work?",
+          "a": "You get 7 days with every feature. No card is needed. One free trial per email address and mobile number."
+        },
+        "after": {
+          "q": "What happens when the trial or my plan ends?",
+          "a": "Your company becomes read-only. Nothing is deleted: you can still open and export everything. Choose a plan and you can work again straight away."
+        },
+        "zatca": {
+          "q": "Are the invoices ZATCA compliant?",
+          "a": "Tax invoices include the seller and buyer details, VAT number, date and time, VAT breakdown and the Phase 1 (generation phase) QR code. Phase 2 integration with the Fatoora platform is planned; please check which phase applies to your business on the ZATCA website."
+        },
+        "arabic": {
+          "q": "Can I use it in Arabic?",
+          "a": "Yes. The whole app, invoices, payslips and PDFs work in Arabic and English. Every user picks their own language."
+        },
+        "payment": {
+          "q": "How do I pay?",
+          "a": "Online with mada, Visa, Mastercard or Apple Pay. You receive a tax invoice right after paying. There are no automatic charges: we remind you 7 days and 1 day before your plan ends."
+        },
+        "data": {
+          "q": "Where is my data stored?",
+          "a": "{location}. Iqama and passport numbers are encrypted and hidden in lists. Only people you invite can see your company."
+        },
+        "change": {
+          "q": "Can I change my plan?",
+          "a": "Yes. Pick another plan or billing cycle when you renew; it starts when your current paid period ends. Need more room right away? Message us on WhatsApp."
+        },
+        "team": {
+          "q": "Can my accountant use it too?",
+          "a": "Yes. Invite your accountant. Accountants work with invoices, workers, salaries and finance; billing and company settings stay with the owner."
+        }
+      }
+    },
+    "contact": {
+      "title": "Talk to us",
+      "body": "Questions about your company's setup or prices? Message us on WhatsApp and a real person will answer, in Arabic or English.",
+      "whatsapp": "Chat on WhatsApp",
+      "email": "Or email {email}"
+    },
+    "cta": {
+      "title": "Try it with your own data this week",
+      "body": "Seven days free, no card. If it is not for you, simply stop."
+    },
+    "footer": {
+      "terms": "Terms",
+      "privacy": "Privacy Policy",
+      "refund": "Refund Policy",
+      "pricing": "Pricing",
+      "rights": "© {year} {brand}. All rights reserved.",
+      "legalNav": "Legal"
+    },
+    "legal": {
+      "draft": "Draft for review: this text must be checked by a qualified lawyer in Saudi Arabia before launch.",
+      "updated": "Last updated: {date}",
+      "back": "Back to home"
+    },
+    "meta": {
+      "title": "{product} – invoices, workforce and salaries for manpower companies in Saudi Arabia",
+      "description": "Tax invoices with ZATCA QR, Iqama and passport reminders, timesheet to salary sheet, income and expenses by site. Arabic and English. 7-day free trial, no card required."
+    }
   }
 }

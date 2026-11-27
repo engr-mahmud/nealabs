@@ -3,7 +3,7 @@
 Subscription business software for manpower supply, contracting and supply companies in Saudi Arabia.
 English and Arabic (RTL), multi-company, 7-day free trial.
 
-**Status:** step 1 of 7 done: auth with SMS phone verification, organizations, roles, trial and read-only mode.
+**Status:** steps 1 to 3 of 7 done: auth with SMS phone verification, organizations, roles, trial and read-only mode; clients, sites and workforce with Excel import; quotations, proforma and tax invoices with ZATCA Phase 1 QR.
 
 ## What works now
 - Sign up with email and Saudi mobile, 6-digit SMS code to verify the phone, sign in, sign out, forgot/reset password (rate limited).
@@ -13,6 +13,17 @@ English and Arabic (RTL), multi-company, 7-day free trial.
 - Team: invite by email as Owner or Accountant, accept invitation, remove member.
 - Trial banner with days left; after expiry the company is read-only, with data export always available.
 - English/Arabic switch with full RTL layout.
+- Clients, sites (each linked to a client) and workforce: add, edit, search, filter, archive/restore, export to Excel.
+- Excel import for clients, sites and workers: download template, upload, preview with row-level errors, import the valid rows.
+- Iqama and passport numbers encrypted in the database, masked in lists, full number shown only on request (logged).
+- Sales: quotation → proforma → tax invoice with one-click conversion; line items with decimal quantities, discount (percent or amount), VAT 15%, live totals.
+- Tax invoices are drafts until issued; issuing gives the next number (INV-00001…, no gaps), the exact time and the ZATCA Phase 1 QR code, then locks the invoice.
+- Credit notes to correct or cancel an issued invoice (partly or fully): own CN- series, reason, QR, EN/AR print and PDF; the invoice balance goes down, never below zero credit room.
+- Payments on issued invoices (partial or full, never more than the balance); status draft / sent / partly paid / paid / overdue; "to collect" totals on the invoice list and dashboard.
+- Print view and server-side PDF in English or Arabic (RTL) with bilingual labels, company logo, bank details and QR.
+- Marketing site in English and Arabic: landing page (features, pricing with Monthly / Quarterly / Yearly switch and "2 months free", FAQ, WhatsApp contact), `/pricing`, `/terms`, `/privacy`, `/refund`.
+- Plan & billing: usage against plan limits, choose plan and cycle, review with VAT, pay on the payment page (Moyasar, or a built-in test page), return page that confirms with the gateway, subscription tax invoices (SUB-00001…, ZATCA Phase 1 QR, EN/AR PDF), payment receipt email, renewal reminders 7 and 1 days before the end, read-only after the 3 grace days.
+- Iqama/passport expiry: badges in the list, "expiring in 30 days" filter, dashboard card, daily reminder email (30, 14, 7, 1 days before and on the day).
 
 ## Local setup
 
@@ -50,10 +61,16 @@ The app logs `[security] ... Row Level Security is NOT enforced` at startup if t
 | `EMAIL_TRANSPORT` | yes | `smtp` in production, `console` for local development |
 | `EMAIL_FROM` | yes | Sender, e.g. `Company <no-reply@example.com>` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | with smtp | SMTP server credentials |
-| `SMS_TRANSPORT` | yes | `unifonic` or `twilio` in production, `console` for local development |
+| `SMS_TRANSPORT` | yes | `unifonic` or `twilio` in production, `console` for local development, `demo` for a public demo (no SMS, the code is shown on the verify page) |
 | `UNIFONIC_APP_SID`, `UNIFONIC_SENDER_ID` | with unifonic | Unifonic app ID and registered sender name |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | with twilio | Twilio credentials; `TWILIO_FROM` is a number or Messaging Service SID |
 | `TRIAL_DAYS` | no | Free trial length, default `7` |
+| `FIELD_ENCRYPTION_KEY` | yes | 32 random bytes, base64 (`openssl rand -base64 32`). Encrypts Iqama and passport numbers. Back it up separately from the database and never change it once real data exists. |
+| `CRON_SECRET` | for reminders | Bearer token for `/api/cron/expiry-reminders` and `/api/cron/billing` (`openssl rand -hex 32`) |
+| `PAYMENT_GATEWAY` | no | `test` (default, built-in test payment page, no money moves) or `moyasar` |
+| `MOYASAR_SECRET_KEY` | with moyasar | Moyasar secret key (`sk_test_…` first, `sk_live_…` in production). Server only. |
+| `MOYASAR_WEBHOOK_SECRET` | with moyasar | The "Secret Token" you set on the webhook in the Moyasar dashboard |
+| `PDF_CHROMIUM_PATH` | no | Chromium binary for invoice PDFs. Empty = Playwright's Chromium (`npx playwright-core install chromium`). The Docker image installs it. |
 
 ## Tests
 
@@ -63,7 +80,7 @@ DATABASE_URL=<test url> npx prisma migrate deploy
 npm test
 ```
 
-Covers: tenant isolation (RLS and service layer), trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
+Covers: tenant isolation (RLS, service layer and cross-company links for clients, sites, workers, sales documents, lines, payments and finance entries), VAT and totals, ZATCA QR payload, numbering and conversion under concurrency, payments, income and expenses (automatic income from payments, VAT split, refunds, voiding, site profit report, salary hook), salaries (calculation and rounding, timesheet upload with row errors, one sheet per worker per month, approve → site-wise expenses, reopen, payroll rules, salary sheet and payslip exports with masked Iqama), Iqama encryption and masking, Excel import/export, trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
 
 Other checks: `npm run typecheck`, `npm run lint`, `npm run build`.
 
@@ -71,9 +88,12 @@ Other checks: `npm run typecheck`, `npm run lint`, `npm run build`.
 
 Do not put real worker data (Iqama, passport) on this setup; production data belongs in-region.
 
-1. Create a Neon project. Use the default (non-superuser) role connection string as `DATABASE_URL` (pooled connection is fine).
-2. Run migrations once from your machine: `DATABASE_URL=<neon url> npx prisma migrate deploy` (and `npm run db:seed` for demo data).
-3. Import the repository in Vercel, set the environment variables above, deploy. The build runs `prisma generate && next build`.
+1. Import the repository in Vercel (Add New → Project). Do not deploy yet if it asks; open the project.
+2. Storage tab → Create Database → Neon (free) → connect it to the project. This sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` (used for migrations).
+3. Settings → Environment Variables: `SMS_TRANSPORT=demo`, `ALLOW_DEMO_SEED=true`, `FIELD_ENCRYPTION_KEY` (`openssl rand -base64 32`), `CRON_SECRET` (`openssl rand -hex 24`), `PAYMENT_GATEWAY=test`. `APP_URL` defaults to the Vercel production domain.
+4. Deploy. Vercel runs `npm run vercel-build`: `prisma generate`, `prisma migrate deploy`, the demo seed (only when `ALLOW_DEMO_SEED=true`; skipped when demo users exist) and `next build`. Demo login: `owner@demo.test` / `demo12345`.
+5. Emails use `EMAIL_TRANSPORT=console` unless SMTP is set, so password reset and invitation emails are not delivered on the demo.
+6. PDF download needs a Chromium build for serverless (for example `@sparticuz/chromium`), which is not set up yet. Until then the PDF button answers "not available" and the print view's **Print → Save as PDF** gives the same document.
 
 ## Deploy: VPS with Docker (production)
 
@@ -114,6 +134,28 @@ DATABASE_URL=postgresql://nealabs:<pw>@127.0.0.1:5432/nealabs_restore scripts/re
 
 Then point `DATABASE_URL` at the restored database (or rename it) and restart the app. Test a restore at least once a month.
 
+## Daily reminder job
+
+`GET /api/cron/expiry-reminders` with `Authorization: Bearer $CRON_SECRET` emails Iqama/passport expiry reminders. Safe to call more than once a day (one email per company per day).
+
+- Vercel: `vercel.json` already schedules it daily at 05:00 UTC (08:00 Riyadh); set `CRON_SECRET` in the project.
+- VPS: `0 5 * * * curl -fsS -H "Authorization: Bearer <CRON_SECRET>" https://app.example.com/api/cron/expiry-reminders`
+
+## Daily billing job
+
+`GET /api/cron/billing` with `Authorization: Bearer $CRON_SECRET`: renewal reminders (7 and 1 days before), trial-ending reminders, status changes (unpaid → past due → read-only), scheduled plan changes, and closing checkouts unpaid for 48 hours. Safe to run more than once a day.
+
+- Vercel: scheduled in `vercel.json` at 05:30 UTC.
+- VPS: `30 5 * * * curl -fsS -H "Authorization: Bearer <CRON_SECRET>" https://app.example.com/api/cron/billing`
+
+## Payments (Moyasar)
+
+1. Create a Moyasar account (needs the company's CR and a Saudi bank account) and wait for activation.
+2. Dashboard → Settings → API keys: copy the **test** secret key into `MOYASAR_SECRET_KEY`, set `PAYMENT_GATEWAY=moyasar`.
+3. Dashboard → Settings → Webhooks: endpoint `https://<your domain>/api/billing/webhook`, method POST, events `payment_paid` and `payment_failed`, and a long random Secret Token; put the same token in `MOYASAR_WEBHOOK_SECRET`.
+4. Pay a plan with Moyasar's test cards and check: the return page says "Payment received", a SUB- invoice appears, and the webhook shows 200 in the dashboard.
+5. Switch to the live key. Fill in the seller details in `src/config/seller.ts` first.
+
 ## Monitoring
 
 Planned before production launch: an uptime check on `APP_URL` and error tracking (for example a self-hosted GlitchTip/Sentry-compatible endpoint). Not wired yet.
@@ -123,7 +165,7 @@ Planned before production launch: an uptime check on `APP_URL` and error trackin
 ```
 src/
   config/        brand.ts (names, colors, contacts), plans.ts (prices)
-  features/      auth, organizations, billing, audit (server logic, actions, components)
+  features/      auth, organizations, billing, audit, clients, sites, workforce, import, master-data, payroll
   components/    ui primitives and layout
   lib/           db (tenantDb / systemDb), env, errors, rate limit, email, validators
   i18n/, messages/  next-intl config, en.json and ar.json

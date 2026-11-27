@@ -57,9 +57,9 @@ export async function setTenant(tx: TxClient, organizationId: string) {
 }
 
 /** Interactive transaction scoped to one organization (RLS applies). */
-export function tenantTransaction<T>(organizationId: string, fn: (tx: TxClient) => Promise<T>) {
+export function tenantTransaction<T>(organizationId: string, fn: (tx: TxClient) => Promise<T>, options?: { timeout?: number }) {
   return prisma.$transaction(async (tx) => {
     await setTenant(tx, organizationId);
     return fn(tx);
-  });
+  }, options);
 }
