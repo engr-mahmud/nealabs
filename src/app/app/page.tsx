@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
@@ -9,6 +9,8 @@ import { getOrganization } from "@/features/organizations/service";
 import { prisma } from "@/lib/db";
 import { countActiveSitesAndWorkers, listExpiringDocuments } from "@/features/workforce/service";
 import { daysUntil, todayInRiyadh } from "@/features/master-data/expiry";
+import { receivablesSummary } from "@/features/sales/service";
+import { formatSar } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -16,11 +18,12 @@ export default async function DashboardPage() {
   const { user, ctx } = await requireOrgPage();
   const t = await getTranslations("dashboard");
   const org = await getOrganization(ctx);
-  const [memberCount, expiring, counts, format] = await Promise.all([
+  const [memberCount, expiring, counts, format, receivables] = await Promise.all([
     prisma.membership.count({ where: { organizationId: ctx.organizationId } }),
     listExpiringDocuments(ctx),
     countActiveSitesAndWorkers(ctx),
     getFormatter(),
+    receivablesSummary(ctx),
   ]);
   const today = todayInRiyadh();
   const tw = await getTranslations("workers");
@@ -112,6 +115,17 @@ export default async function DashboardPage() {
           <p className="text-sm text-slate-600">{t("sites.workers", { count: counts.workers })}</p>
           <Link href={counts.sites === 0 ? "/app/sites/new" : "/app/sites"} className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline">
             {counts.sites === 0 ? t("sites.add") : t("sites.manage")}
+          </Link>
+        </Card>
+        <Card>
+          <CardTitle>{t("receivables.title")}</CardTitle>
+          <p className="mt-2 text-3xl font-semibold tabular-nums text-slate-900">{formatSar(receivables.outstanding, await getLocale())}</p>
+          <p className="text-sm text-slate-600">
+            {t("receivables.unpaid", { count: receivables.unpaidCount })}
+            {receivables.overdueCount > 0 ? <span className="font-medium text-red-700"> · {t("receivables.overdue", { count: receivables.overdueCount })}</span> : null}
+          </p>
+          <Link href={receivables.unpaidCount === 0 ? "/app/sales/invoices/new" : "/app/sales/invoices?status=unpaid"} className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline">
+            {receivables.unpaidCount === 0 ? t("receivables.create") : t("receivables.view")}
           </Link>
         </Card>
         <Card>

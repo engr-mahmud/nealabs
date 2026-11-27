@@ -3,7 +3,7 @@
 Subscription business software for manpower supply, contracting and supply companies in Saudi Arabia.
 English and Arabic (RTL), multi-company, 7-day free trial.
 
-**Status:** steps 1 and 2 of 7 done: auth with SMS phone verification, organizations, roles, trial and read-only mode; clients, sites and workforce with Excel import.
+**Status:** steps 1 to 3 of 7 done: auth with SMS phone verification, organizations, roles, trial and read-only mode; clients, sites and workforce with Excel import; quotations, proforma and tax invoices with ZATCA Phase 1 QR.
 
 ## What works now
 - Sign up with email and Saudi mobile, 6-digit SMS code to verify the phone, sign in, sign out, forgot/reset password (rate limited).
@@ -16,6 +16,11 @@ English and Arabic (RTL), multi-company, 7-day free trial.
 - Clients, sites (each linked to a client) and workforce: add, edit, search, filter, archive/restore, export to Excel.
 - Excel import for clients, sites and workers: download template, upload, preview with row-level errors, import the valid rows.
 - Iqama and passport numbers encrypted in the database, masked in lists, full number shown only on request (logged).
+- Sales: quotation → proforma → tax invoice with one-click conversion; line items with decimal quantities, discount (percent or amount), VAT 15%, live totals.
+- Tax invoices are drafts until issued; issuing gives the next number (INV-00001…, no gaps), the exact time and the ZATCA Phase 1 QR code, then locks the invoice.
+- Credit notes to correct or cancel an issued invoice (partly or fully): own CN- series, reason, QR, EN/AR print and PDF; the invoice balance goes down, never below zero credit room.
+- Payments on issued invoices (partial or full, never more than the balance); status draft / sent / partly paid / paid / overdue; "to collect" totals on the invoice list and dashboard.
+- Print view and server-side PDF in English or Arabic (RTL) with bilingual labels, company logo, bank details and QR.
 - Iqama/passport expiry: badges in the list, "expiring in 30 days" filter, dashboard card, daily reminder email (30, 14, 7, 1 days before and on the day).
 
 ## Local setup
@@ -60,6 +65,7 @@ The app logs `[security] ... Row Level Security is NOT enforced` at startup if t
 | `TRIAL_DAYS` | no | Free trial length, default `7` |
 | `FIELD_ENCRYPTION_KEY` | yes | 32 random bytes, base64 (`openssl rand -base64 32`). Encrypts Iqama and passport numbers. Back it up separately from the database and never change it once real data exists. |
 | `CRON_SECRET` | for reminders | Bearer token for `/api/cron/expiry-reminders` (`openssl rand -hex 32`) |
+| `PDF_CHROMIUM_PATH` | no | Chromium binary for invoice PDFs. Empty = Playwright's Chromium (`npx playwright-core install chromium`). The Docker image installs it. |
 
 ## Tests
 
@@ -69,7 +75,7 @@ DATABASE_URL=<test url> npx prisma migrate deploy
 npm test
 ```
 
-Covers: tenant isolation (RLS, service layer and cross-company links for clients, sites, workers), Iqama encryption and masking, Excel import/export, trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
+Covers: tenant isolation (RLS, service layer and cross-company links for clients, sites, workers, sales documents, lines and payments), VAT and totals, ZATCA QR payload, numbering and conversion under concurrency, payments, Iqama encryption and masking, Excel import/export, trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
 
 Other checks: `npm run typecheck`, `npm run lint`, `npm run build`.
 
@@ -80,6 +86,7 @@ Do not put real worker data (Iqama, passport) on this setup; production data bel
 1. Create a Neon project. Use the default (non-superuser) role connection string as `DATABASE_URL` (pooled connection is fine).
 2. Run migrations once from your machine: `DATABASE_URL=<neon url> npx prisma migrate deploy` (and `npm run db:seed` for demo data).
 3. Import the repository in Vercel, set the environment variables above, deploy. The build runs `prisma generate && next build`.
+4. PDF download needs a Chromium build for serverless (for example `@sparticuz/chromium`), which is not set up yet. Until then the PDF button answers "not available" and the print view's **Print → Save as PDF** gives the same document.
 
 ## Deploy: VPS with Docker (production)
 

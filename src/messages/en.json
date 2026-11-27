@@ -32,7 +32,8 @@
     "currentOrganization": "Current company",
     "clients": "Clients",
     "sites": "Sites",
-    "workforce": "Workforce"
+    "workforce": "Workforce",
+    "sales": "Sales"
   },
   "home": {
     "title": "Run your manpower company from one simple place",
@@ -109,7 +110,13 @@
     "clientNotFound": "No active client with this name. Add the client first, or check the spelling.",
     "siteNotFound": "No active site with this name. Add the site first, or check the spelling.",
     "siteAmbiguous": "More than one client has a site with this name. Fill in the Client column too.",
-    "duplicateInFile": "This appears more than once in the file."
+    "duplicateInFile": "This appears more than once in the file.",
+    "invalidQuantity": "Enter a quantity above 0, for example 1, 26 or 7.5.",
+    "addLine": "Add at least one item.",
+    "tooManyLines": "Too many items. Split them into two documents.",
+    "invalidPercent": "Enter a percent between 0 and 100.",
+    "dueBeforeIssue": "This date must be on or after the document date.",
+    "paymentTooLarge": "This is more than the balance due. Check the amount."
   },
   "errors": {
     "generic": "Something went wrong. Please try again. If it keeps happening, contact support.",
@@ -140,7 +147,16 @@
     "importNotExcel": "This is not an Excel .xlsx file. Download the template, fill it in and upload it.",
     "importEmpty": "The file has no data rows. Fill in the first sheet under the header row.",
     "importMissingColumns": "Some required columns are missing. Download the template and keep its column headers.",
-    "importTooManyRows": "Too many rows. Upload at most 2,000 rows at a time."
+    "importTooManyRows": "Too many rows. Upload at most 2,000 rows at a time.",
+    "documentLocked": "This document can no longer be changed. Issued tax invoices and converted documents are locked.",
+    "alreadyIssued": "This invoice is already issued. Refresh the page to see it.",
+    "alreadyConverted": "This document was already converted. Open it from the link on this page.",
+    "cannotConvert": "This document cannot be converted that way.",
+    "sellerVatMissing": "Add your company's VAT number in Company settings before issuing a tax invoice.",
+    "issueBeforePayment": "Issue the invoice first, then record payments.",
+    "qrValueTooLong": "Your company name is too long for the invoice QR code. Shorten the name in Company settings.",
+    "creditTooLarge": "This credit note is more than what is left to credit on the invoice. Lower the amounts.",
+    "creditNeedsIssuedInvoice": "A credit note can only be made for an issued tax invoice."
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
@@ -282,7 +298,7 @@
     },
     "next": {
       "title": "Coming next",
-      "body": "Invoices with QR, income and expenses, and salary sheets will appear here."
+      "body": "Income and expenses, and salary sheets will appear here."
     },
     "expiring": {
       "title": "Expiring documents",
@@ -296,6 +312,13 @@
       "workers": "{count, plural, one {# active worker} other {# active workers}}",
       "add": "Add a site",
       "manage": "View sites"
+    },
+    "receivables": {
+      "title": "To collect",
+      "unpaid": "{count, plural, =0 {No unpaid invoices} one {# unpaid invoice} other {# unpaid invoices}}",
+      "overdue": "{count} overdue",
+      "view": "View unpaid invoices",
+      "create": "Create an invoice"
     }
   },
   "export": {
@@ -394,7 +417,11 @@
     "noSites": "No sites for this client yet. Add the locations where your workers go.",
     "saved": "Client saved.",
     "archiveConfirm": "Archive this client and its sites? Nothing is deleted and you can restore it later.",
-    "archivedNote": "This client is archived. Restore it to use it again."
+    "archivedNote": "This client is archived. Restore it to use it again.",
+    "documents": "Quotations and invoices",
+    "newInvoice": "New invoice",
+    "newQuotation": "New quotation",
+    "noDocuments": "No quotations or invoices for this client yet."
   },
   "sites": {
     "title": "Sites",
@@ -515,5 +542,207 @@
     "nothingValid": "No row is ready to import. Fix the errors in Excel and upload the file again.",
     "sitesNeedClients": "Sites are matched to clients by the client name, so import or add clients first.",
     "workersNeedSites": "Workers are matched to sites by site name. The Site and Client columns are optional."
+  },
+  "sales": {
+    "title": "Sales",
+    "search": "Search",
+    "searchPlaceholder": "Search by number or client",
+    "noResults": "Nothing matches.",
+    "clearFilters": "Show all",
+    "draftNumber": "Draft",
+    "balanceShort": "{amount} due",
+    "editTitle": "Edit {name}",
+    "createdFrom": "Created from",
+    "convertedTo": "Converted to",
+    "draftInvoiceNote": "This invoice is a draft. Issue it to give it an invoice number, today's date and the QR code. After that it cannot be changed.",
+    "vatMissingNote": "Your company's VAT number is missing, so this invoice cannot be issued yet.",
+    "addVat": "Add VAT number",
+    "qrLabel": "Invoice QR code",
+    "types": {
+      "quotations": {
+        "singular": "Quotation",
+        "plural": "Quotations",
+        "subtitle": "Price offers for your clients. Convert one to an invoice in one click.",
+        "new": "New quotation",
+        "newSubtitle": "Add the client and the items. You can convert it to an invoice later.",
+        "emptyTitle": "No quotations yet",
+        "emptyBody": "Send a price offer to a client, then turn it into a proforma or tax invoice with one click.",
+        "draftName": "quotation"
+      },
+      "proformas": {
+        "singular": "Proforma invoice",
+        "plural": "Proformas",
+        "subtitle": "Request advance payment before the tax invoice.",
+        "new": "New proforma",
+        "newSubtitle": "A proforma is not a tax invoice. Convert it when the work is done or paid.",
+        "emptyTitle": "No proforma invoices yet",
+        "emptyBody": "Create one here, or convert a quotation into a proforma.",
+        "draftName": "proforma"
+      },
+      "invoices": {
+        "singular": "Tax invoice",
+        "plural": "Invoices",
+        "subtitle": "Tax invoices with VAT 15% and QR code.",
+        "new": "New invoice",
+        "newSubtitle": "Save as a draft, check it, then issue it.",
+        "emptyTitle": "No invoices yet",
+        "emptyBody": "Create your first tax invoice. It takes less than a minute.",
+        "draftName": "draft invoice"
+      },
+      "credit-notes": {
+        "singular": "Credit note",
+        "plural": "Credit notes",
+        "subtitle": "Correct or cancel an issued tax invoice. The invoice itself never changes.",
+        "new": "New credit note",
+        "newSubtitle": "Lower the items to what you are crediting, add the reason, save, then issue.",
+        "emptyTitle": "No credit notes yet",
+        "emptyBody": "To correct an issued invoice, open it and choose \"Create credit note\".",
+        "draftName": "draft credit note"
+      }
+    },
+    "kinds": {
+      "standard": "Tax invoice",
+      "simplified": "Simplified tax invoice"
+    },
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "converted": "Converted",
+      "partial": "Partly paid",
+      "paid": "Paid",
+      "due": "Overdue",
+      "credited": "Credited"
+    },
+    "filters": {
+      "all": "All",
+      "draft": "Drafts",
+      "sent": "Sent",
+      "converted": "Converted",
+      "unpaid": "Unpaid",
+      "due": "Overdue",
+      "paid": "Paid"
+    },
+    "summary": {
+      "outstanding": "To collect",
+      "unpaidCount": "{count, plural, one {# unpaid invoice} other {# unpaid invoices}}",
+      "overdue": "Overdue invoices",
+      "overdueHint": "Past the due date and not fully paid"
+    },
+    "fields": {
+      "client": "Client",
+      "site": "Site",
+      "issueDate": "Date",
+      "issuedAt": "Issued",
+      "dueDate": "Due date",
+      "validUntil": "Valid until",
+      "description": "Description",
+      "descriptionAr": "Description in Arabic",
+      "quantity": "Qty",
+      "unitPrice": "Unit price (SAR)",
+      "amount": "Amount",
+      "discount": "Discount",
+      "discountPercent": "Discount (%)",
+      "discountAmount": "Discount (SAR)",
+      "notes": "Notes",
+      "terms": "Terms and conditions",
+      "buyerVat": "Client VAT number",
+      "reason": "Reason"
+    },
+    "discount": {
+      "NONE": "No discount",
+      "PERCENT": "Percent (%)",
+      "AMOUNT": "Amount (SAR)"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "vat": "VAT {rate}%",
+      "total": "Total"
+    },
+    "form": {
+      "client": "Client and dates",
+      "chooseClient": "Choose a client",
+      "noSite": "No site",
+      "noSites": "This client has no sites",
+      "invoiceDateHint": "The invoice date and time are set when you issue it.",
+      "items": "Items",
+      "showArabic": "Arabic descriptions",
+      "itemNo": "Item {n}",
+      "removeItem": "Remove item {n}",
+      "addItem": "Add item",
+      "descriptionPlaceholder": "For example: Helpers – November, 26 days",
+      "notesTerms": "Notes and terms",
+      "create": {
+        "quotations": "Save quotation",
+        "proformas": "Save proforma",
+        "invoices": "Save draft invoice",
+        "credit-notes": "Save draft credit note"
+      },
+      "noClientsTitle": "Add a client first",
+      "noClientsBody": "Every document is issued to a client. Add your client, then come back here.",
+      "addClient": "Add client"
+    },
+    "actions": {
+      "issue": "Issue invoice",
+      "toInvoice": "Convert to tax invoice",
+      "toProforma": "Convert to proforma",
+      "markSent": "Mark as sent",
+      "deleteDraft": "Delete draft",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this draft?",
+      "printEn": "Print (English)",
+      "printAr": "Print (Arabic)",
+      "pdfEn": "PDF English",
+      "pdfAr": "PDF Arabic",
+      "issueCredit": "Issue credit note"
+    },
+    "done": {
+      "saved": "Saved.",
+      "sent": "Marked as sent.",
+      "issued": "Issued. It now has its number and QR code.",
+      "converted": "Converted. Check the details below.",
+      "paid": "Payment recorded.",
+      "paymentDeleted": "Payment removed.",
+      "deleted": "Draft deleted."
+    },
+    "payments": {
+      "title": "Payments",
+      "paidOf": "Paid {paid} of {total}",
+      "balance": "{amount} due",
+      "none": "No payments yet.",
+      "amount": "Amount (SAR)",
+      "paidOn": "Date received",
+      "method": "Method",
+      "reference": "Reference",
+      "referenceHint": "optional, e.g. transfer number",
+      "add": "Record payment",
+      "saving": "Saving…",
+      "deleteConfirm": "Remove this payment?",
+      "fullyPaid": "Fully paid.",
+      "credited": "credited {amount}",
+      "fullyCredited": "Fully credited."
+    },
+    "methods": {
+      "BANK_TRANSFER": "Bank transfer",
+      "CASH": "Cash",
+      "CHEQUE": "Cheque",
+      "CARD": "Card",
+      "OTHER": "Other"
+    },
+    "credit": {
+      "title": "Credit notes",
+      "create": "Create credit note",
+      "none": "No credit notes. Use one to correct or cancel this invoice.",
+      "forInvoice": "Credit note for invoice {number}",
+      "forInvoiceLabel": "Credit note for invoice",
+      "maxCredit": "up to {amount} can be credited",
+      "reasonPlaceholder": "For example: 2 days not worked, wrong price",
+      "hint": "The items below are copied from the invoice. Lower or remove them so the total is what you are crediting.",
+      "tooLarge": "The total is more than the {amount} that can still be credited.",
+      "draftNote": "This credit note is a draft. Issue it to give it a number and the QR code; the invoice balance goes down then. After that it cannot be changed.",
+      "pickInvoiceTitle": "Start from an invoice",
+      "pickInvoiceBody": "A credit note always corrects an issued tax invoice. Open the invoice and choose \"Create credit note\".",
+      "goToInvoices": "Go to invoices"
+    }
   }
 }
