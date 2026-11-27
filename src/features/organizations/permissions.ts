@@ -12,6 +12,8 @@ const PERMISSIONS = {
   "data.read": ["OWNER", "ACCOUNTANT"],
   "data.write": ["OWNER", "ACCOUNTANT"],
   "data.export": ["OWNER", "ACCOUNTANT"],
+  /** Undo an approved salary sheet (takes its expenses out of Finance). */
+  "payroll.reopen": ["OWNER"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

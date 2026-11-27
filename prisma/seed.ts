@@ -13,6 +13,7 @@ import { addPayment, convertSalesDoc, createCreditNote, createSalesDoc, getSales
 import { createEntry, listCategories } from "../src/features/finance/service";
 import { createWorker } from "../src/features/workforce/service";
 import { todayInRiyadh } from "../src/features/master-data/expiry";
+import { approveSheet, createSheetForActiveWorkers, getSheet, markPaid, updateLine } from "../src/features/payroll/service";
 
 async function main() {
   if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_SEED !== "true") {
@@ -118,15 +119,25 @@ async function main() {
   const cat = (key: string) => categories.find((c) => c.systemKey === key)!.id;
   const expense = (key: string, amount: number, siteId: string | null, description: string, includesVat = false, daysAgo = 1) =>
     createEntry(ctx, { kind: "EXPENSE", categoryId: cat(key), amount, includesVat, date: inDays(-daysAgo), method: "BANK_TRANSFER", siteId, description, reference: null });
-  await expense("salaries", 690000, jubail.id, "Salaries – Jubail Plant");
-  await expense("salaries", 405000, dammam.id, "Salaries – Dammam Tower");
-  await expense("salaries", 175000, khobar.id, "Salaries – Khobar Mall");
   await expense("accommodation", 345000, jubail.id, "Camp rent", true, 3);
   await expense("transport", 86250, dammam.id, "Bus hire", true, 4);
   await expense("food", 120000, khobar.id, "Meals for cleaners", false, 2);
   await expense("rent", 575000, null, "Office rent", true, 5);
   await expense("government_fees", 65000, null, "Iqama renewal – Imran Khan", false, 6);
-  console.log("Seeded finance: 1 paid invoice, 8 expenses.");
+  console.log("Seeded finance: 1 paid invoice, 5 expenses.");
+
+  // Salaries: last month's sheet, approved (its net pay becomes "Salaries" expenses per site).
+  const last = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+  const sheetId = await createSheetForActiveWorkers(ctx, { year: last.getUTCFullYear(), month: last.getUTCMonth() + 1, siteId: null });
+  const lines = (await getSheet(ctx, sheetId)).lines;
+  const none = { absentDays: 0, overtimeHours: 0, additions: 0, advances: 0, deductions: 0, notes: null };
+  if (lines[0]) await updateLine(ctx, lines[0].id, { ...none, overtimeHours: 24000, advances: 30000 });
+  if (lines[1]) await updateLine(ctx, lines[1].id, { ...none, absentDays: 2000 });
+  if (lines[2]) await updateLine(ctx, lines[2].id, { ...none, overtimeHours: 12500, additions: 20000, notes: "Good work bonus" });
+  await approveSheet(ctx, sheetId, inDays(-1));
+  // Everyone paid except one worker, so "unpaid salaries" has something to show.
+  for (const line of lines.slice(0, -1)) await markPaid(ctx, sheetId, inDays(-1), line.id);
+  console.log("Seeded payroll: last month's salary sheet, approved, all but one worker paid.");
   console.log("Seeded: owner@demo.test / accountant@demo.test (password demo12345)");
 }
 

@@ -11,7 +11,7 @@ export interface SheetRow {
 
 const XLSX_MAGIC = [0x50, 0x4b, 0x03, 0x04]; // .xlsx is a zip file
 
-function cellText(value: ExcelJS.CellValue): string {
+export function cellText(value: ExcelJS.CellValue): string {
   if (value === null || value === undefined) return "";
   if (value instanceof Date) return value.toISOString().slice(0, 10);
   if (typeof value === "number") return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(6)));
@@ -23,13 +23,20 @@ function cellText(value: ExcelJS.CellValue): string {
   return "";
 }
 
+export interface ReadColumn {
+  key: string;
+  en: string;
+  ar: string;
+  required?: boolean;
+}
+
 /**
  * Reads the first worksheet of an .xlsx file into rows keyed by column key.
  * Columns are found by their header (English, Arabic or key), so their order does not matter.
  */
-export async function readSheet(type: ImportType, bytes: Uint8Array): Promise<SheetRow[]> {
+export async function readColumns(columns: readonly ReadColumn[], bytes: Uint8Array, limits: { maxBytes: number; maxRows: number }): Promise<SheetRow[]> {
   if (bytes.length === 0) throw new AppError("importNoFile");
-  if (bytes.length > masterDataConfig.import.maxBytes) throw new AppError("importTooLarge");
+  if (bytes.length > limits.maxBytes) throw new AppError("importTooLarge");
   if (!XLSX_MAGIC.every((b, i) => bytes[i] === b)) throw new AppError("importNotExcel");
 
   const workbook = new ExcelJS.Workbook();
@@ -42,7 +49,7 @@ export async function readSheet(type: ImportType, bytes: Uint8Array): Promise<Sh
   if (!sheet) throw new AppError("importEmpty");
 
   const lookup = new Map<string, string>();
-  for (const col of COLUMNS[type]) {
+  for (const col of columns) {
     for (const label of [col.en, col.ar, col.key]) lookup.set(normalizeHeader(label), col.key);
   }
   const columnKeys = new Map<number, string>();
@@ -51,7 +58,7 @@ export async function readSheet(type: ImportType, bytes: Uint8Array): Promise<Sh
     if (key) columnKeys.set(colNumber, key);
   });
   const found = new Set(columnKeys.values());
-  const missing = COLUMNS[type].filter((c) => c.required && !found.has(c.key));
+  const missing = columns.filter((c) => c.required && !found.has(c.key));
   if (missing.length > 0) throw new AppError("importMissingColumns");
 
   const rows: SheetRow[] = [];
@@ -63,8 +70,12 @@ export async function readSheet(type: ImportType, bytes: Uint8Array): Promise<Sh
     rows.push({ rowNumber, values });
   });
   if (rows.length === 0) throw new AppError("importEmpty");
-  if (rows.length > masterDataConfig.import.maxRows) throw new AppError("importTooManyRows");
+  if (rows.length > limits.maxRows) throw new AppError("importTooManyRows");
   return rows;
+}
+
+export function readSheet(type: ImportType, bytes: Uint8Array): Promise<SheetRow[]> {
+  return readColumns(COLUMNS[type], bytes, masterDataConfig.import);
 }
 
 const HEADER_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };

@@ -110,6 +110,22 @@ Short record of choices made, with the reason. Update when a decision changes.
 - **Database checks:** amount > 0 (only refunds are negative), VAT between 0 and the amount, and each source has exactly its link (payment, invoice or salary sheet).
 - **Lists** open on this month with presets (last month, quarter, year, all) or a custom range, filters for type, category and site ("No site" = company overhead), search, and an Excel export of the same filter (allowed in read-only mode).
 
+## Salaries (step 5, 2026-11-27)
+- **Tables** `payroll_settings`, `salary_sheets`, `salary_sheet_lines`: tenant tables with RLS and composite foreign keys (sheet, worker, site). **A worker can be on only one sheet per month** (unique index), so one company can make one sheet for all sites or one per site, never paying someone twice.
+- **Flow (3 steps):** download the timesheet for a month (and optional site), already filled with the active workers → upload it and see every row checked (red cells, net pay per row) → create a draft. The file is sent again on save and checked again on the server. Rows are linked to workers by a "Worker ref" column (the worker id, not sensitive); a row without it is matched by exact name if unique. Only the last 4 Iqama digits are in the file. "Start with all workers" makes a draft without Excel.
+- **Inputs per worker:** unpaid absent days, overtime hours (both may have decimals, stored in thousandths), bonus/additions, advance to deduct, other deductions (halalas). Empty = 0.
+- **Calculation** (`features/payroll/calc.ts`, integers only, each amount rounded once, half up):
+  gross = basic + housing + transport + other; absence = (absence base) × days ÷ month days (never more than the base);
+  overtime per hour = hourly (overtime base) + premium % × hourly basic, hourly = monthly ÷ (month days × hours per day);
+  net = gross − absence + overtime + additions − advances − deductions. **Net below 0 is refused** (per row and by a database CHECK); carry the rest of an advance to next month.
+- **Default rules (per company, owner can change under Salaries > Payroll rules):** 30-day month, 8 hours a day, overtime = hourly full salary + 50% of hourly basic, absences deducted from the full salary. **This follows our reading of Saudi Labor Law Article 107 (overtime = hourly wage + 50% of basic wage). It is not verified legal advice: please confirm with your accountant / HRSD (https://hrsd.gov.sa) and your contracts, including whether "hourly wage" means basic only or basic + allowances, and the right day basis for absences.**
+- **Snapshots:** each line copies the worker's name, last 4 Iqama digits, job, site and salary amounts; the sheet copies the rules. Later edits in Workforce do not change a sheet; "Update salaries from Workforce" refreshes a draft on purpose (inputs are kept).
+- **Approve** (Owner or Accountant): needs a pay date, locks the sheet, and in the same transaction records the net pay as "Salaries" expenses, one per site (workers without a site = company overhead), dated on the pay date (cash basis, like step 4). **Advances:** the expense is the net paid now; record an advance as a Salaries expense when you hand it out, so it is not missed or counted twice.
+- **Mark as paid** (owner decision 2026-11-27: a separate step after approval). Approval records the expense on the salary date; "Mark as paid" records the day each worker actually got the money, for one worker or all the rest at once, and can be undone. Stored per line (`paidAt`), with the sheet's `paidNet` kept in sync (DB check: never above the net, only on approved sheets). Sheets show Unpaid / Partly paid / Paid; `unpaidSalaries()` gives the dashboard total. Paid date is on the payslip and in the Excel export; every change is in the audit log. A sheet with paid workers cannot be reopened until the paid marks are undone.
+- **Reopen** is Owner only: back to draft, its expenses are removed from Finance (audited). Drafts can be deleted (no money recorded); approved sheets cannot.
+- **Exports:** salary sheet Excel; salary sheet PDF (A4 landscape, grouped by site with subtotals and signature column); payslips PDF (one A4 page per worker, all or one), EN or AR, from the same HTML renderer and Chromium as invoices; a print view works where PDF is unavailable. Exports are written to the audit log (salary data is personal data).
+- Not built yet: an advances ledger carried month to month, WPS/Mudad bank files, GOSI (out of scope).
+
 ## Open questions
 1. ~~Trial per company or per user?~~ Answered: one trial per new email + phone, verified by SMS.
 2. SMS provider account: Unifonic (recommended) or Twilio, plus a registered sender name.
@@ -121,3 +137,5 @@ Short record of choices made, with the reason. Update when a decision changes.
 8. ~~Credit notes before launch?~~ Answered: yes, built in step 3.
 9. Default payment terms (30 days) and quotation validity (15 days): right for your customers?
 10. Finance reports are cash basis and without VAT. Is that how you want to see profit, or do you also need an accrual view (by invoice date)?
+11. Payroll defaults: is overtime "hourly full salary + 50% of hourly basic" and absence "full salary ÷ 30 per day" right for your workers' contracts? (Changeable per company.)
+12. ~~Approve = paid, or a separate paid step?~~ Answered: separate "Mark as paid" step (per worker or whole sheet).

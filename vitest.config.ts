@@ -6,7 +6,11 @@ config({ path: ".env.test", override: true, quiet: true });
 
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Lets tests import server-only modules (PDF/HTML renderers).
+      "server-only": fileURLToPath(new URL("./tests/server-only-stub.ts", import.meta.url)),
+    },
   },
   test: {
     environment: "node",
