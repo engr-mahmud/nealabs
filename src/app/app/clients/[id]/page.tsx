@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
@@ -15,6 +15,10 @@ import { getClient } from "@/features/clients/service";
 import { clientFormValues } from "@/features/clients/schemas";
 import { ArchiveForm } from "@/features/master-data/components/archive-form";
 import { canWriteData } from "@/features/master-data/permissions";
+import { todayInRiyadh } from "@/features/master-data/expiry";
+import { formatSar } from "@/lib/money";
+import { listClientDocs } from "@/features/sales/service";
+import { displayStatus, statusTone, typeSlugs } from "@/features/sales/status";
 
 export const metadata: Metadata = { title: "Client" };
 
@@ -29,6 +33,8 @@ export default async function ClientPage({ params, searchParams }: { params: Pro
   });
   const archived = !!client.archivedAt;
   const canWrite = canWriteData(ctx);
+  const [docs, ts, locale, format] = await Promise.all([listClientDocs(ctx, client.id), getTranslations("sales"), getLocale(), getFormatter()]);
+  const today = todayInRiyadh();
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -67,6 +73,45 @@ export default async function ClientPage({ params, searchParams }: { params: Pro
                 </Link>
               </li>
             ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <CardTitle>{t("clients.documents")}</CardTitle>
+          {canWrite && !archived ? (
+            <div className="flex gap-2">
+              <ButtonLink href={`/app/sales/quotations/new?clientId=${client.id}`} variant="secondary" size="sm">
+                + {t("clients.newQuotation")}
+              </ButtonLink>
+              <ButtonLink href={`/app/sales/invoices/new?clientId=${client.id}`} size="sm">
+                + {t("clients.newInvoice")}
+              </ButtonLink>
+            </div>
+          ) : null}
+        </div>
+        {docs.length === 0 ? (
+          <p className="text-sm text-slate-600">{t("clients.noDocuments")}</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {docs.map((d) => {
+              const st = displayStatus({ ...d, converted: !!d.convertedTo }, today);
+              return (
+                <li key={d.id}>
+                  <Link href={`/app/sales/${typeSlugs[d.type]}/${d.id}`} className="flex min-h-12 items-center justify-between gap-2 rounded-lg px-1 hover:bg-slate-50">
+                    <span className="text-sm text-slate-900">
+                      {ts(`types.${typeSlugs[d.type]}.singular`)} <span className="ltr-nums font-medium">{d.number ?? ts("draftNumber")}</span>
+                      <span className="text-slate-500"> · {format.dateTime(d.issueDate, { dateStyle: "medium", timeZone: "UTC" })}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm tabular-nums">{formatSar(d.total, locale)}</span>
+                      <Badge tone={statusTone[st]}>{ts(`status.${st}`)}</Badge>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Card>

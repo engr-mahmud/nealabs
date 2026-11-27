@@ -30,6 +30,32 @@ enum BillingCycle {
   YEARLY
 }
 
+enum SalesDocType {
+  QUOTATION
+  PROFORMA
+  INVOICE
+}
+
+/// Stored state only. Payment state (partial, paid, overdue) is derived from amounts and dates.
+enum SalesDocStatus {
+  DRAFT
+  SENT
+}
+
+enum DiscountType {
+  NONE
+  PERCENT
+  AMOUNT
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
+  CHEQUE
+  CARD
+  OTHER
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -104,7 +130,7 @@ model Organization {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  createdBy    User              @relation("OrganizationCreatedBy", fields: [createdById], references: [id])
+  createdBy    User                @relation("OrganizationCreatedBy", fields: [createdById], references: [id])
   memberships  Membership[]
   invitations  Invitation[]
   subscription Subscription?
@@ -113,6 +139,10 @@ model Organization {
   clients      Client[]
   sites        Site[]
   workers      Worker[]
+  salesDocs    SalesDocument[]
+  salesLines   SalesDocumentLine[]
+  payments     SalesPayment[]
+  docCounters  DocumentCounter[]
 
   @@map("organizations")
 }
@@ -250,8 +280,9 @@ model Client {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   sites        Site[]
+  salesDocs    SalesDocument[]
 
   @@unique([id, organizationId])
   @@index([organizationId, archivedAt])
@@ -271,9 +302,10 @@ model Site {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client       Client       @relation(fields: [clientId, organizationId], references: [id, organizationId])
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client          @relation(fields: [clientId, organizationId], references: [id, organizationId])
   workers      Worker[]
+  salesDocs    SalesDocument[]
 
   @@unique([id, organizationId])
   @@index([organizationId, archivedAt])
@@ -317,4 +349,116 @@ model Worker {
   @@index([organizationId, passportExpiry])
   @@index([siteId])
   @@map("workers")
+}
+
+/// RLS. Last number used per company and document type (QT-, PI-, INV- series).
+model DocumentCounter {
+  organizationId String
+  type           SalesDocType
+  lastNumber     Int          @default(0)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, type])
+  @@map("document_counters")
+}
+
+/// RLS. Quotation, proforma invoice or tax invoice. Amounts are integer halalas, computed on the server.
+/// Quotations and proformas are numbered when created; tax invoices only when issued (no gaps).
+/// An issued tax invoice (status SENT) can no longer be edited or deleted.
+model SalesDocument {
+  id             String         @id @default(cuid())
+  organizationId String
+  type           SalesDocType
+  status         SalesDocStatus @default(DRAFT)
+  /// Null for a draft tax invoice.
+  number         String?
+  clientId       String
+  siteId         String?
+  /// The quotation or proforma this was converted from. Unique: a document converts once.
+  sourceId       String?        @unique
+  issueDate      DateTime       @db.Date
+  /// Due date for invoices, "valid until" for quotations.
+  dueDate        DateTime?      @db.Date
+  /// Exact moment a tax invoice was issued (used in the ZATCA QR code).
+  issuedAt       DateTime?
+  /// Seller and buyer details frozen on the document (company or client edits do not change old documents).
+  seller         Json
+  buyer          Json
+  discountType   DiscountType   @default(NONE)
+  /// Basis points for PERCENT (1000 = 10%), halalas for AMOUNT.
+  discountValue  Int            @default(0)
+  /// Basis points (1500 = 15%).
+  vatRate        Int
+  subtotal       Int
+  discountAmount Int
+  taxableAmount  Int
+  vatAmount      Int
+  total          Int
+  paidAmount     Int            @default(0)
+  notes          String?
+  terms          String?
+  createdById    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client              @relation(fields: [clientId, organizationId], references: [id, organizationId])
+  site         Site?               @relation(fields: [siteId, organizationId], references: [id, organizationId])
+  source       SalesDocument?      @relation("Conversion", fields: [sourceId], references: [id])
+  convertedTo  SalesDocument?      @relation("Conversion")
+  lines        SalesDocumentLine[]
+  payments     SalesPayment[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, type, number])
+  @@index([organizationId, type, createdAt])
+  @@index([organizationId, type, status, dueDate])
+  @@index([clientId])
+  @@index([siteId])
+  @@map("sales_documents")
+}
+
+/// RLS. A line of a sales document.
+model SalesDocumentLine {
+  id             String  @id @default(cuid())
+  organizationId String
+  documentId     String
+  position       Int
+  description    String
+  descriptionAr  String?
+  /// Thousandths (1500 = 1.5), so hours or days can have decimals without floats.
+  quantity       Int
+  /// Halalas, excluding VAT.
+  unitPrice      Int
+  /// round(quantity x unitPrice), halalas, excluding VAT.
+  lineTotal      Int
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  document     SalesDocument @relation(fields: [documentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@index([documentId, position])
+  @@map("sales_document_lines")
+}
+
+/// RLS. A payment received against an issued tax invoice.
+model SalesPayment {
+  id             String        @id @default(cuid())
+  organizationId String
+  documentId     String
+  /// Halalas, including VAT.
+  amount         Int
+  paidOn         DateTime      @db.Date
+  method         PaymentMethod
+  reference      String?
+  note           String?
+  createdById    String?
+  createdAt      DateTime      @default(now())
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  document     SalesDocument @relation(fields: [documentId, organizationId], references: [id, organizationId])
+
+  @@index([documentId])
+  @@index([organizationId, paidOn])
+  @@map("sales_payments")
 }

@@ -249,5 +249,9 @@ export async function exportOrganizationData(ctx: OrgContext) {
   ]);
   // Master data in the same columns as the Excel templates (worker numbers decrypted; the export is audited).
   const [clients, sites, workers] = await Promise.all([exportRows(ctx, "clients"), exportRows(ctx, "sites"), exportRows(ctx, "workers")]);
-  return { exportedAt: new Date().toISOString(), organization, members, subscription, clients, sites, workers, auditLogs };
+  const salesDocuments = await db.salesDocument.findMany({
+    orderBy: { createdAt: "asc" },
+    include: { lines: { orderBy: { position: "asc" } }, payments: { orderBy: { paidOn: "asc" } } },
+  });
+  return { exportedAt: new Date().toISOString(), organization, members, subscription, clients, sites, workers, salesDocuments, auditLogs };
 }

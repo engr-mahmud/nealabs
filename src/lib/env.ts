@@ -20,6 +20,8 @@ const schema = z.object({
   FIELD_ENCRYPTION_KEY: z.string().optional(),
   /** Shared secret for scheduled jobs (Authorization: Bearer <CRON_SECRET>). */
   CRON_SECRET: z.string().min(16).optional(),
+  /** Chromium/Chrome binary for invoice PDFs. Empty: Playwright's own Chromium (npx playwright-core install chromium). */
+  PDF_CHROMIUM_PATH: z.string().optional(),
   TRIAL_DAYS: z.coerce.number().int().min(1).max(60).default(7),
 });
 

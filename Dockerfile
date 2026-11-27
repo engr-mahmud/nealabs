@@ -23,6 +23,10 @@ RUN useradd --system --uid 1001 nextjs
 COPY --from=build --chown=nextjs /app/public ./public
 COPY --from=build --chown=nextjs /app/.next/standalone ./
 COPY --from=build --chown=nextjs /app/.next/static ./.next/static
+# Headless Chromium for invoice PDFs (same version as playwright-core, with its system libraries).
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN node node_modules/playwright-core/cli.js install --with-deps chromium-headless-shell \
+  && chmod -R o+rx /ms-playwright && rm -rf /var/lib/apt/lists/*
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]
