@@ -13,7 +13,7 @@ if (!process.env.DATABASE_URL?.includes("test")) {
 
 export async function resetDb() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE salary_sheet_lines, salary_sheets, payroll_settings, finance_entries, finance_categories, sales_payments, sales_document_lines, sales_documents, document_counters, workers, sites, clients, trial_claims, phone_verification_codes, audit_logs, subscriptions, invitations, organization_logos, memberships, organizations, password_reset_tokens, sessions, users, rate_limits CASCADE',
+    'TRUNCATE TABLE subscription_invoices, billing_checkouts, billing_counters, salary_sheet_lines, salary_sheets, payroll_settings, finance_entries, finance_categories, sales_payments, sales_document_lines, sales_documents, document_counters, workers, sites, clients, trial_claims, phone_verification_codes, audit_logs, subscriptions, invitations, organization_logos, memberships, organizations, password_reset_tokens, sessions, users, rate_limits CASCADE',
   );
 }
 

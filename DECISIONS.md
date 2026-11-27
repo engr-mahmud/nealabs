@@ -5,7 +5,7 @@ Short record of choices made, with the reason. Update when a decision changes.
 ## Stack
 - **Next.js 16 (App Router) + TypeScript (strict), Tailwind CSS 4, Prisma 7, PostgreSQL 16.** Current stable versions at the time of step 1 (Nov 2026). Prisma 7 uses the `@prisma/adapter-pg` driver adapter and `prisma.config.ts`.
 - **UI primitives are written in-repo** (`src/components/ui`) in the shadcn style, without Radix. Fewer dependencies, faster pages. Add Radix later only for complex widgets (combobox, dialog).
-- **Fonts are self-hosted** via `@fontsource` (Inter + IBM Plex Sans Arabic). No call to Google Fonts at build or run time, which also keeps data in-region.
+- **Fonts are self-hosted** from `public/fonts` (Inter variable for Latin, IBM Plex Sans Arabic 400/600 for Arabic letters), declared in `globals.css` and preloaded in the root layout (step 7: replaced `@fontsource`, which made Arabic pages load a second Latin font and pushed mobile Lighthouse under 90). No call to Google Fonts at build or run time, which also keeps data in-region.
 - **No `proxy.ts` (middleware).** Every page and action checks the session itself through `requireOrgPage()` / `requireOrgAction()`. One place to reason about auth, and no edge runtime.
 
 ## Naming and brand
@@ -48,11 +48,27 @@ Short record of choices made, with the reason. Update when a decision changes.
 - Organizations are never hard-deleted (`archivedAt` for later).
 - Invitations are bound to the invited email, valid 7 days, single use.
 
-## Billing (prepared in step 1, built in step 7)
-- Plans and prices in `src/config/plans.ts`, integers in halalas, excluding VAT. **Prices (Starter 99, Pro 199, Business 399 SAR/month) are placeholders** to validate with first customers.
-- Quarterly = monthly x 3. Yearly = monthly x 10 ("2 months free"). Tested.
-- Plan or cycle changes: apply at next renewal (no proration) unless the gateway makes proration simple. Decide in step 7.
-- Until payments are live, the billing page links to WhatsApp.
+## Billing (step 7)
+- Plans and prices in `src/config/plans.ts`, integers in halalas, excluding VAT. **Prices (Starter 99, Pro 199, Business 399 SAR/month) and limits are placeholders** (`PRICES_VALIDATED = false` shows "introductory prices" on the pricing page). Validate with first customers.
+- Quarterly = monthly x 3. Yearly = monthly x 10 ("2 months free", saved amount shown on the pricing page and at checkout). VAT 15% is added on the whole cycle price, rounded half up once. Tested.
+- **No automatic charges (prepaid periods).** The owner pays each period on a hosted payment page; reminder emails go out 7 and 1 days before the end. Why: mada recurring/tokenized charging needs extra approval from the gateway and banks, and Saudi SMB owners are used to paying per period. Saved-card auto-renewal can be added later behind the same gateway interface.
+- **Plan or cycle changes apply at the next renewal, no proration.** The owner picks the plan when paying the renewal. Renewal opens 14 days before the period ends, so at most one future period is prepaid. A renewal paid early keeps the current plan until the current period ends (`scheduledPlanCode` / `scheduledFrom`). Need an upgrade right away: WhatsApp, handled manually.
+- Paying during the trial starts the paid period when the trial ends (the customer keeps the free days). Paying within the 3 unpaid grace days continues from the old period end (no free days).
+- Access stays computed from dates on each request: ACTIVE past its end gets the 3 grace days (`past_due`), then read-only. A daily job (`/api/cron/billing`) also stores the status changes, rolls over scheduled plans, emails reminders and the "now read-only" notice, and closes checkouts unpaid for 48 hours.
+- Plan limits (workers, invoices per month) are **soft** for now: the billing page shows usage and a warning when over the limit, nothing is blocked.
+- **Gateway: Moyasar** (mada, Visa/Mastercard, Apple Pay; Saudi company) behind `PaymentGateway` in `src/features/billing/gateway/`. Uses Moyasar's hosted Invoices page, so card data never touches our server (no PCI scope beyond SAQ A). Tap can be added as another implementation of the same interface.
+- `PAYMENT_GATEWAY=test` (default) uses a built-in test payment page with "Pay (test)" / "Decline (test)" buttons; a "Test mode" notice is shown on billing pages. No money moves.
+- **A payment is never trusted from the browser or the webhook body.** Both the return page and the webhook read the invoice back from Moyasar with the secret key, check status, amount and currency, then apply it. Applying is idempotent and row-locked (webhook and return page can arrive together). An amount mismatch is refused and logged.
+- Moyasar webhooks carry the dashboard "Secret Token" in the JSON body (no header signature); it is compared in constant time. A 5xx response makes Moyasar retry.
+- **Subscription tax invoices**: issued by the software seller (`src/config/seller.ts`, placeholders to fill) to the customer company, numbered `SUB-00001…` without gaps (counter row in the paying transaction), with seller/buyer snapshot, service period and ZATCA Phase 1 QR. Buyer with a VAT number: tax invoice; without: simplified tax invoice. EN/AR print view and PDF. Tables `billing_checkouts` and `subscription_invoices` have RLS like every tenant table.
+- Refunds are done manually in the Moyasar dashboard for now; a credit note for a refunded subscription invoice is not built yet.
+- Not verified against a live Moyasar account yet: invoice status values and payment fields were taken from docs.moyasar.com (Nov 2026). Test with a `sk_test_` key before launch.
+
+## Marketing site (step 7)
+- Landing page, `/pricing`, `/terms`, `/privacy`, `/refund` in a `(marketing)` route group. Same cookie/Accept-Language locale as the app (no `/ar` URLs yet; add them later if Arabic SEO matters).
+- No images: the hero "product preview" is HTML/CSS, icons are inline SVG, FAQ uses `<details>` (no JavaScript). The only client component is the pricing cycle switch. Lighthouse on a local production build: English mobile 92 / desktop 100 performance, Arabic mobile 93; accessibility, best practices and SEO 100. Re-check on the real host.
+- Legal pages are **drafts** (`LEGAL_REVIEWED = false` shows a notice) to be checked by a Saudi lawyer. Proposed refund rule: full refund within 7 days of the first paid payment, no refunds on renewals, duplicates/errors always refunded. Owner to confirm.
+- WhatsApp: floating button on marketing pages plus a contact section. Number in `src/config/brand.ts`.
 
 ## SMS
 - One `sendSms()` function behind `SMS_TRANSPORT`: `console` (development, prints the code in the server log), `unifonic` (default choice for production: Saudi provider with local sender name support) or `twilio` (fallback). Switching provider is an env change.
@@ -146,3 +162,5 @@ Short record of choices made, with the reason. Update when a decision changes.
 11. Payroll defaults: is overtime "hourly full salary + 50% of hourly basic" and absence "full salary ÷ 30 per day" right for your workers' contracts? (Changeable per company.)
 12. ~~Approve = paid, or a separate paid step?~~ Answered: separate "Mark as paid" step (per worker or whole sheet).
 13. Dashboard "Pending invoices" shows drafts to issue and quotations/proformas not yet invoiced. Is that what you need, or did you mean unpaid invoices? (Unpaid money is already the "To collect" card.)
+14. Refund rule in the draft Refund Policy (7 days after the first payment, no refunds on renewals): OK for you?
+15. Seller details for subscription tax invoices (legal name EN/AR, VAT number, CR, address): fill in `src/config/seller.ts`.

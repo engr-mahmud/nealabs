@@ -21,6 +21,8 @@ English and Arabic (RTL), multi-company, 7-day free trial.
 - Credit notes to correct or cancel an issued invoice (partly or fully): own CN- series, reason, QR, EN/AR print and PDF; the invoice balance goes down, never below zero credit room.
 - Payments on issued invoices (partial or full, never more than the balance); status draft / sent / partly paid / paid / overdue; "to collect" totals on the invoice list and dashboard.
 - Print view and server-side PDF in English or Arabic (RTL) with bilingual labels, company logo, bank details and QR.
+- Marketing site in English and Arabic: landing page (features, pricing with Monthly / Quarterly / Yearly switch and "2 months free", FAQ, WhatsApp contact), `/pricing`, `/terms`, `/privacy`, `/refund`.
+- Plan & billing: usage against plan limits, choose plan and cycle, review with VAT, pay on the payment page (Moyasar, or a built-in test page), return page that confirms with the gateway, subscription tax invoices (SUB-00001…, ZATCA Phase 1 QR, EN/AR PDF), payment receipt email, renewal reminders 7 and 1 days before the end, read-only after the 3 grace days.
 - Iqama/passport expiry: badges in the list, "expiring in 30 days" filter, dashboard card, daily reminder email (30, 14, 7, 1 days before and on the day).
 
 ## Local setup
@@ -64,7 +66,10 @@ The app logs `[security] ... Row Level Security is NOT enforced` at startup if t
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | with twilio | Twilio credentials; `TWILIO_FROM` is a number or Messaging Service SID |
 | `TRIAL_DAYS` | no | Free trial length, default `7` |
 | `FIELD_ENCRYPTION_KEY` | yes | 32 random bytes, base64 (`openssl rand -base64 32`). Encrypts Iqama and passport numbers. Back it up separately from the database and never change it once real data exists. |
-| `CRON_SECRET` | for reminders | Bearer token for `/api/cron/expiry-reminders` (`openssl rand -hex 32`) |
+| `CRON_SECRET` | for reminders | Bearer token for `/api/cron/expiry-reminders` and `/api/cron/billing` (`openssl rand -hex 32`) |
+| `PAYMENT_GATEWAY` | no | `test` (default, built-in test payment page, no money moves) or `moyasar` |
+| `MOYASAR_SECRET_KEY` | with moyasar | Moyasar secret key (`sk_test_…` first, `sk_live_…` in production). Server only. |
+| `MOYASAR_WEBHOOK_SECRET` | with moyasar | The "Secret Token" you set on the webhook in the Moyasar dashboard |
 | `PDF_CHROMIUM_PATH` | no | Chromium binary for invoice PDFs. Empty = Playwright's Chromium (`npx playwright-core install chromium`). The Docker image installs it. |
 
 ## Tests
@@ -133,6 +138,21 @@ Then point `DATABASE_URL` at the restored database (or rename it) and restart th
 
 - Vercel: `vercel.json` already schedules it daily at 05:00 UTC (08:00 Riyadh); set `CRON_SECRET` in the project.
 - VPS: `0 5 * * * curl -fsS -H "Authorization: Bearer <CRON_SECRET>" https://app.example.com/api/cron/expiry-reminders`
+
+## Daily billing job
+
+`GET /api/cron/billing` with `Authorization: Bearer $CRON_SECRET`: renewal reminders (7 and 1 days before), trial-ending reminders, status changes (unpaid → past due → read-only), scheduled plan changes, and closing checkouts unpaid for 48 hours. Safe to run more than once a day.
+
+- Vercel: scheduled in `vercel.json` at 05:30 UTC.
+- VPS: `30 5 * * * curl -fsS -H "Authorization: Bearer <CRON_SECRET>" https://app.example.com/api/cron/billing`
+
+## Payments (Moyasar)
+
+1. Create a Moyasar account (needs the company's CR and a Saudi bank account) and wait for activation.
+2. Dashboard → Settings → API keys: copy the **test** secret key into `MOYASAR_SECRET_KEY`, set `PAYMENT_GATEWAY=moyasar`.
+3. Dashboard → Settings → Webhooks: endpoint `https://<your domain>/api/billing/webhook`, method POST, events `payment_paid` and `payment_failed`, and a long random Secret Token; put the same token in `MOYASAR_WEBHOOK_SECRET`.
+4. Pay a plan with Moyasar's test cards and check: the return page says "Payment received", a SUB- invoice appears, and the webhook shows 200 in the dashboard.
+5. Switch to the live key. Fill in the seller details in `src/config/seller.ts` first.
 
 ## Monitoring
 

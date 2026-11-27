@@ -26,10 +26,11 @@ describe("computeAccess", () => {
     expect(computeAccess(trial, at(30))).toMatchObject({ state: "expired", readOnly: true });
   });
 
-  it("active subscriptions are writable until the period ends", () => {
+  it("active subscriptions are writable until the period ends, then get the unpaid grace period", () => {
     const sub = { status: "ACTIVE" as const, trialEndsAt: at(7), currentPeriodEnd: at(37) };
     expect(computeAccess(sub, at(20))).toMatchObject({ state: "active", readOnly: false });
-    expect(computeAccess(sub, at(37))).toMatchObject({ state: "expired", readOnly: true });
+    expect(computeAccess(sub, at(37))).toMatchObject({ state: "past_due", readOnly: false });
+    expect(computeAccess(sub, at(37 + PAST_DUE_GRACE_DAYS))).toMatchObject({ state: "expired", readOnly: true });
   });
 
   it("canceled subscriptions keep working until the paid period ends", () => {

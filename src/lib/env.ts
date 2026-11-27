@@ -22,6 +22,13 @@ const schema = z.object({
   CRON_SECRET: z.string().min(16).optional(),
   /** Chromium/Chrome binary for invoice PDFs. Empty: Playwright's own Chromium (npx playwright-core install chromium). */
   PDF_CHROMIUM_PATH: z.string().optional(),
+  /** "test": built-in test checkout, no money moves (demo). "moyasar": real payments (mada, cards, Apple Pay). */
+  PAYMENT_GATEWAY: z.enum(["test", "moyasar"]).default("test"),
+  /** Moyasar secret API key (sk_test_... in sandbox, sk_live_... in production). Server only. */
+  MOYASAR_SECRET_KEY: z.string().optional(),
+  /** The "Secret Token" set on the webhook in the Moyasar dashboard. */
+  MOYASAR_WEBHOOK_SECRET: z.string().optional(),
+  MOYASAR_API_URL: z.url().default("https://api.moyasar.com/v1"),
   TRIAL_DAYS: z.coerce.number().int().min(1).max(60).default(7),
 });
 

@@ -38,13 +38,6 @@
     "payroll": "Salaries",
     "reports": "Reports"
   },
-  "home": {
-    "title": "Run your manpower company from one simple place",
-    "subtitle": "Invoices with QR, workforce records, timesheets and salary sheets, in English and Arabic.",
-    "cta": "Start 7-day free trial",
-    "noCard": "No card required",
-    "signIn": "Sign in"
-  },
   "auth": {
     "signIn": {
       "title": "Sign in",
@@ -60,7 +53,7 @@
       "submit": "Create account",
       "haveAccount": "Already have an account?",
       "signIn": "Sign in",
-      "agree": "By creating an account you agree to the Terms and Privacy Policy."
+      "agree": "By creating an account you agree to the <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
     },
     "forgot": {
       "title": "Reset your password",
@@ -185,7 +178,9 @@
     "chooseMonth": "Choose the month for this salary sheet.",
     "approveBeforePaying": "Approve the salary sheet first, then mark workers as paid.",
     "sheetHasPaidWorkers": "Some workers are marked as paid. Undo the paid marks first, then reopen the sheet.",
-    "invalidPaidDate": "Choose the date the salary was paid."
+    "invalidPaidDate": "Choose the date the salary was paid.",
+    "renewTooEarly": "Your plan is already paid. You can renew from 14 days before it ends.",
+    "paymentUnavailable": "The payment page could not be opened. Please try again in a few minutes, or contact us on WhatsApp."
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
@@ -284,22 +279,30 @@
     "choosePlan": "Choose a plan",
     "readOnlyTitle": "Read-only mode",
     "readOnlyBody": "Your trial or subscription has ended. Your data is safe and you can still view and export it. Choose a plan to make changes again.",
-    "pastDue": "Your last payment did not go through. Please update your payment to avoid read-only mode.",
+    "pastDue": "Your plan has ended and is not renewed yet. Renew within 3 days to avoid read-only mode.",
     "exportData": "Export data"
   },
   "billing": {
     "title": "Plan & billing",
-    "subtitle": "Your current plan and trial.",
+    "subtitle": "Your plan, payments and tax invoices.",
     "status": {
       "trialing": "Free trial",
       "active": "Active",
-      "past_due": "Payment due",
+      "past_due": "Renewal due",
       "expired": "Read-only"
     },
     "trialEnds": "Trial ends on {date}.",
     "endedOn": "Ended on {date}.",
-    "renewsOn": "Renews on {date}.",
-    "plans": "Plans",
+    "renewsOn": "Paid until {date}.",
+    "graceUntil": "Renew before {date} to avoid read-only mode.",
+    "currentPlan": "{plan} plan · {cycle}",
+    "noPlan": "No paid plan yet",
+    "scheduled": "From {date}: {plan} plan, {cycle} (already paid).",
+    "usage": "Usage",
+    "workersUsage": "Workers",
+    "invoicesUsage": "Invoices this month",
+    "overLimit": "You are above your plan's limit. Everything keeps working; please move to a bigger plan at your next renewal.",
+    "plans": "Choose your plan",
     "perMonth": "/ month",
     "exVat": "Prices exclude 15% VAT.",
     "workersUpTo": "Up to {count} workers",
@@ -309,9 +312,80 @@
       "PRO": "Pro",
       "BUSINESS": "Business"
     },
-    "comingSoon": "Online card and mada payment is coming soon. To subscribe today, message us on WhatsApp.",
-    "whatsapp": "Subscribe on WhatsApp",
-    "ownerOnly": "Only the owner can manage billing."
+    "cycles": {
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "YEARLY": "Yearly"
+    },
+    "cycleNote": {
+      "MONTHLY": "Billed every month",
+      "QUARTERLY": "Billed every 3 months",
+      "YEARLY": "Billed once a year"
+    },
+    "billedAs": "{amount} billed {cycle, select, MONTHLY {monthly} QUARTERLY {every 3 months} other {yearly}}",
+    "twoMonthsFree": "2 months free",
+    "youSave": "You save {amount}",
+    "suggested": "Fits your usage",
+    "popular": "Most popular",
+    "select": "Continue with {plan}",
+    "renewOpens": "You can renew from {date}.",
+    "ownerOnly": "Only the owner can manage billing.",
+    "whatsapp": "Questions? WhatsApp us",
+    "testMode": "Test mode: payments are simulated and no money is taken.",
+    "invoices": "Tax invoices",
+    "noInvoices": "Your tax invoices will appear here after your first payment.",
+    "invoiceNo": "Invoice",
+    "date": "Date",
+    "period": "Period",
+    "amount": "Amount",
+    "download": "PDF",
+    "downloadAr": "PDF (Arabic)",
+    "view": "View",
+    "noAutoCharge": "No automatic charges. We email you 7 days and 1 day before your plan ends, and you renew with one click.",
+    "checkout": {
+      "title": "Review and pay",
+      "back": "Change plan",
+      "plan": "Plan",
+      "cycle": "Billing cycle",
+      "period": "Period",
+      "startsLater": "Starts on {date}, right after your current {kind, select, trial {free trial} other {plan}} ends.",
+      "listPrice": "{months} months at {price}",
+      "freeMonths": "2 months free",
+      "subtotal": "Subtotal (excl. VAT)",
+      "vat": "VAT 15%",
+      "total": "Total to pay",
+      "pay": "Pay {amount}",
+      "methods": "mada, Visa, Mastercard and Apple Pay. Payments are processed securely by our payment provider; we never see your card number.",
+      "invoiceNote": "A ZATCA-compliant tax invoice is issued to {company} right after payment.",
+      "vatHint": "Add your VAT number in company settings first if you need it on the invoice.",
+      "terms": "By paying you agree to the <terms>Terms</terms> and <refund>Refund Policy</refund>."
+    },
+    "return": {
+      "paidTitle": "Payment received",
+      "paidBody": "Thank you. Your {plan} plan is active until {date}.",
+      "invoice": "Download tax invoice",
+      "pendingTitle": "Waiting for confirmation",
+      "pendingBody": "We have not received confirmation from the payment provider yet. This usually takes less than a minute.",
+      "refresh": "Check again",
+      "failedTitle": "Payment did not go through",
+      "failedBody": "No money was taken. You can try again with another card.",
+      "tryAgain": "Try again",
+      "expiredTitle": "This payment link has expired",
+      "toBilling": "Back to billing"
+    },
+    "testPay": {
+      "title": "Test payment page",
+      "body": "This page stands in for the payment provider while the app runs in test mode. No card is needed and no money moves.",
+      "amount": "Amount",
+      "pay": "Pay (test)",
+      "decline": "Decline (test)"
+    },
+    "per": {
+      "MONTHLY": "/ month",
+      "QUARTERLY": "/ 3 months",
+      "YEARLY": "/ year"
+    },
+    "cycleGroup": "Billing cycle"
   },
   "dashboard": {
     "welcome": "Welcome, {name}",
@@ -404,6 +478,34 @@
       "line": "{name}: {document} {when}",
       "expiredLine": "expired on {date}",
       "expiresLine": "expires on {date}"
+    },
+    "billingPaid": {
+      "subject": "Payment received · invoice {number}",
+      "heading": "Thank you, your payment is confirmed",
+      "body": "We received {amount} for the {plan} plan. Your tax invoice {number} is ready to download on the billing page.",
+      "cta": "Open billing",
+      "footer": "Keep this email for your records."
+    },
+    "trialEnding": {
+      "subject": "Your free trial for {org} ends in {days, plural, one {# day} other {# days}}",
+      "heading": "Your free trial ends soon",
+      "body": "The free trial for {org} ends on {date}. Choose a plan to keep adding invoices, workers and salary sheets. Your data stays safe either way.",
+      "cta": "Choose a plan",
+      "footer": "You get this email because you own {org}."
+    },
+    "renewal": {
+      "subject": "{org}: your {plan} plan ends in {days, plural, one {# day} other {# days}}",
+      "heading": "Time to renew your plan",
+      "body": "The {plan} plan for {org} ends on {date}. Payments are not taken automatically: renew on the billing page to keep working without interruption.",
+      "cta": "Renew now",
+      "footer": "You get this email because you own {org}. Reminders are sent 7 days and 1 day before your plan ends."
+    },
+    "readOnly": {
+      "subject": "{org} is now read-only",
+      "heading": "Your company is now read-only",
+      "body": "The trial or plan for {org} has ended. Nothing was deleted: you can still view and export all your data. Choose a plan to make changes again.",
+      "cta": "Choose a plan",
+      "footer": "You get this email because you own {org}."
     }
   },
   "verify": {
@@ -1193,6 +1295,166 @@
       "loss": "Loss",
       "month": "Month",
       "note": "Cash basis: each amount counts in the month money came in or went out. Click a month for its full report."
+    }
+  },
+  "marketing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "contact": "Contact",
+      "signIn": "Sign in",
+      "startTrial": "Start free trial",
+      "openApp": "Open app",
+      "menu": "Menu",
+      "home": "Home",
+      "skip": "Skip to content"
+    },
+    "hero": {
+      "eyebrow": "For manpower supply and contracting companies in Saudi Arabia",
+      "title": "Invoices, workers and salaries in one simple place",
+      "subtitle": "Send tax invoices with the ZATCA QR code, keep Iqama and passport dates under control, and turn timesheets into salary sheets in three steps. In Arabic and English.",
+      "cta": "Start 7-day free trial",
+      "secondary": "See pricing",
+      "note": "No card required · Arabic and English · Your data is never deleted"
+    },
+    "preview": {
+      "label": "Product preview",
+      "invoice": "Tax invoice",
+      "client": "Al Noor Contracting",
+      "line1": "Labour supply – November",
+      "line2": "Overtime hours",
+      "vat": "VAT 15%",
+      "total": "Total",
+      "paid": "Paid",
+      "salary": "Salary sheet · November",
+      "approved": "Approved",
+      "workers": "48 workers",
+      "expiring": "3 Iqamas expire this month"
+    },
+    "trust": {
+      "qr": "ZATCA Phase 1 QR on every tax invoice",
+      "bilingual": "Arabic and English, including PDFs",
+      "safe": "Read-only, never deleted, when a plan ends"
+    },
+    "features": {
+      "title": "Everything a manpower company does every month",
+      "subtitle": "Built for owners and accountants, not for IT departments. Big buttons, few fields, clear next steps.",
+      "items": {
+        "invoices": {
+          "title": "Quotation to tax invoice",
+          "body": "Turn a quotation into a proforma and a tax invoice with one click. VAT, totals and the QR code are done for you."
+        },
+        "workforce": {
+          "title": "Workforce records",
+          "body": "Every worker with Iqama, passport, job, salary and site. Reminders before documents expire. Numbers are encrypted."
+        },
+        "salaries": {
+          "title": "Timesheet to salary sheet",
+          "body": "Download the Excel template, fill hours, upload. Overtime, allowances and deductions are calculated; approve and print payslips."
+        },
+        "finance": {
+          "title": "Income and expenses",
+          "body": "Invoice payments become income and approved salaries become expenses automatically. See profit for each site."
+        },
+        "dashboard": {
+          "title": "One clear dashboard",
+          "body": "Expiring documents, money to collect, unpaid salaries and this month's income against expenses, at a glance."
+        },
+        "excel": {
+          "title": "Excel in, Excel out",
+          "body": "Import clients, sites and workers from Excel. Export your data at any time, even after your plan ends."
+        }
+      }
+    },
+    "steps": {
+      "title": "Up and running in one afternoon",
+      "items": {
+        "one": {
+          "title": "Add your company",
+          "body": "Name, logo, VAT and CR number. Used on every invoice."
+        },
+        "two": {
+          "title": "Add clients, sites and workers",
+          "body": "Type them in or import your existing Excel sheets."
+        },
+        "three": {
+          "title": "Invoice and pay salaries",
+          "body": "Send your first tax invoice in under a minute and run this month's salaries."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Simple prices in Saudi riyals",
+      "subtitle": "Every plan has every feature. Pick by the size of your workforce. Pay yearly and get 2 months free.",
+      "cta": "Start free trial",
+      "included": "All features included",
+      "trialNote": "Start with a 7-day free trial. No card needed. Choose a plan only when you are ready.",
+      "draft": "Introductory prices, subject to change before launch."
+    },
+    "faq": {
+      "title": "Questions owners ask",
+      "items": {
+        "trial": {
+          "q": "How does the free trial work?",
+          "a": "You get 7 days with every feature. No card is needed. One free trial per email address and mobile number."
+        },
+        "after": {
+          "q": "What happens when the trial or my plan ends?",
+          "a": "Your company becomes read-only. Nothing is deleted: you can still open and export everything. Choose a plan and you can work again straight away."
+        },
+        "zatca": {
+          "q": "Are the invoices ZATCA compliant?",
+          "a": "Tax invoices include the seller and buyer details, VAT number, date and time, VAT breakdown and the Phase 1 (generation phase) QR code. Phase 2 integration with the Fatoora platform is planned; please check which phase applies to your business on the ZATCA website."
+        },
+        "arabic": {
+          "q": "Can I use it in Arabic?",
+          "a": "Yes. The whole app, invoices, payslips and PDFs work in Arabic and English. Every user picks their own language."
+        },
+        "payment": {
+          "q": "How do I pay?",
+          "a": "Online with mada, Visa, Mastercard or Apple Pay. You receive a tax invoice right after paying. There are no automatic charges: we remind you 7 days and 1 day before your plan ends."
+        },
+        "data": {
+          "q": "Where is my data stored?",
+          "a": "{location}. Iqama and passport numbers are encrypted and hidden in lists. Only people you invite can see your company."
+        },
+        "change": {
+          "q": "Can I change my plan?",
+          "a": "Yes. Pick another plan or billing cycle when you renew; it starts when your current paid period ends. Need more room right away? Message us on WhatsApp."
+        },
+        "team": {
+          "q": "Can my accountant use it too?",
+          "a": "Yes. Invite your accountant. Accountants work with invoices, workers, salaries and finance; billing and company settings stay with the owner."
+        }
+      }
+    },
+    "contact": {
+      "title": "Talk to us",
+      "body": "Questions about your company's setup or prices? Message us on WhatsApp and a real person will answer, in Arabic or English.",
+      "whatsapp": "Chat on WhatsApp",
+      "email": "Or email {email}"
+    },
+    "cta": {
+      "title": "Try it with your own data this week",
+      "body": "Seven days free, no card. If it is not for you, simply stop."
+    },
+    "footer": {
+      "terms": "Terms",
+      "privacy": "Privacy Policy",
+      "refund": "Refund Policy",
+      "pricing": "Pricing",
+      "rights": "© {year} {brand}. All rights reserved.",
+      "legalNav": "Legal"
+    },
+    "legal": {
+      "draft": "Draft for review: this text must be checked by a qualified lawyer in Saudi Arabia before launch.",
+      "updated": "Last updated: {date}",
+      "back": "Back to home"
+    },
+    "meta": {
+      "title": "{product} – invoices, workforce and salaries for manpower companies in Saudi Arabia",
+      "description": "Tax invoices with ZATCA QR, Iqama and passport reminders, timesheet to salary sheet, income and expenses by site. Arabic and English. 7-day free trial, no card required."
     }
   }
 }
