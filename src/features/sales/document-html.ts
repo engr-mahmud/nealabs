@@ -115,6 +115,13 @@ function dateTime(d: Date): string {
   return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}`;
 }
 
+/** @font-face rules for Inter and IBM Plex Sans Arabic (embedded for PDFs). Shared by all printable documents. */
+export function documentFontsCss(inline: boolean): string {
+  return `@font-face { font-family: "Inter"; src: url("${fontSrc(FONT_FILES.inter, inline)}") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Plex Arabic"; src: url("${fontSrc(FONT_FILES.plexArabic400, inline)}") format("woff2"); font-weight: 400; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+@font-face { font-family: "Plex Arabic"; src: url("${fontSrc(FONT_FILES.plexArabic600, inline)}") format("woff2"); font-weight: 600; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }`;
+}
+
 export interface RenderOptions {
   lang: DocLang;
   /** True for the PDF: embed fonts, no toolbar. */
@@ -222,9 +229,7 @@ export async function renderSalesDocHtml(doc: SalesDocDetail, opts: RenderOption
 <meta name="robots" content="noindex">
 <title>${esc(title)}</title>
 <style>
-@font-face { font-family: "Inter"; src: url("${fontSrc(FONT_FILES.inter, inline)}") format("woff2"); font-weight: 100 900; }
-@font-face { font-family: "Plex Arabic"; src: url("${fontSrc(FONT_FILES.plexArabic400, inline)}") format("woff2"); font-weight: 400; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
-@font-face { font-family: "Plex Arabic"; src: url("${fontSrc(FONT_FILES.plexArabic600, inline)}") format("woff2"); font-weight: 600; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+${documentFontsCss(inline)}
 @page { size: A4; margin: 14mm 12mm; }
 * { box-sizing: border-box; }
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

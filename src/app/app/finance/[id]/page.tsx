@@ -83,6 +83,14 @@ export default async function EntryPage({ params, searchParams }: { params: Prom
               </Link>
             </>
           ) : null}
+          {entry.salarySheetId ? (
+            <>
+              {" "}
+              <Link href={`/app/payroll/${entry.salarySheetId}`} className="font-medium underline">
+                {t("openSalarySheet")}
+              </Link>
+            </>
+          ) : null}
         </Alert>
       ) : null}
 

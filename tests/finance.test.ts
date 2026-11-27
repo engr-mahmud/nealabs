@@ -311,9 +311,12 @@ describe("finance: salary sheet hook (step 5)", () => {
   it("records one expense per site, replaces on repeat, and can be removed", async () => {
     const { ctx, client, site } = await setup();
     const site2 = await createSite(ctx, { clientId: client.id, name: "North Camp", city: null, address: null, notes: null });
+    const sheet = await tenantDb(ctx.organizationId).salarySheet.create({
+      data: { organizationId: ctx.organizationId, year: 2026, month: 11, overtimeBase: "GROSS", overtimePremium: 5000, hoursPerDay: 8, monthDays: 30, absenceBase: "GROSS" },
+    });
     const record = (lines: { siteId: string | null; amount: number }[]) =>
       tenantTransaction(ctx.organizationId, (tx) =>
-        recordSalarySheetExpenses(tx, { organizationId: ctx.organizationId, userId: ctx.userId, salarySheetId: "sheet-1", date: d("2026-11-30"), description: "Salaries November 2026", lines }),
+        recordSalarySheetExpenses(tx, { organizationId: ctx.organizationId, userId: ctx.userId, salarySheetId: sheet.id, date: d("2026-11-30"), description: "Salaries November 2026", lines }),
       );
     await record([
       { siteId: site.id, amount: 150000 },
@@ -331,7 +334,7 @@ describe("finance: salary sheet hook (step 5)", () => {
     expect(list.total).toBe(1);
     expect(list.totals.expense).toBe(100000);
 
-    await tenantTransaction(ctx.organizationId, (tx) => removeSalarySheetExpenses(tx, ctx.organizationId, "sheet-1", ctx.userId));
+    await tenantTransaction(ctx.organizationId, (tx) => removeSalarySheetExpenses(tx, ctx.organizationId, sheet.id, ctx.userId));
     expect((await listEntries(ctx, query())).total).toBe(0);
   });
 });

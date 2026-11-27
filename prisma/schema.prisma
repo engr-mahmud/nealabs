@@ -160,6 +160,9 @@ model Organization {
   docCounters       DocumentCounter[]
   financeCategories FinanceCategory[]
   financeEntries    FinanceEntry[]
+  payrollSettings   PayrollSettings?
+  salarySheets      SalarySheet[]
+  salaryLines       SalarySheetLine[]
 
   @@map("organizations")
 }
@@ -325,6 +328,8 @@ model Site {
   workers        Worker[]
   salesDocs      SalesDocument[]
   financeEntries FinanceEntry[]
+  salarySheets   SalarySheet[]
+  salaryLines    SalarySheetLine[]
 
   @@unique([id, organizationId])
   @@index([organizationId, archivedAt])
@@ -359,9 +364,11 @@ model Worker {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  site         Site?        @relation(fields: [siteId, organizationId], references: [id, organizationId])
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  site         Site?              @relation(fields: [siteId, organizationId], references: [id, organizationId])
+  salaryLines  SalarySheetLine[]
 
+  @@unique([id, organizationId])
   @@unique([organizationId, iqamaHash])
   @@index([organizationId, archivedAt])
   @@index([organizationId, iqamaExpiry])
@@ -543,7 +550,7 @@ model FinanceEntry {
   salesPaymentId  String?
   /// Set for source INVOICE_REFUND: the invoice whose money was paid back to the client.
   salesDocumentId String?
-  /// Set for source SALARY_SHEET (one entry per sheet and site). Foreign key added with the salary sheet table (step 5).
+  /// Set for source SALARY_SHEET (one entry per sheet and site).
   salarySheetId   String?
   voidedAt        DateTime?
   voidedById      String?
@@ -558,6 +565,7 @@ model FinanceEntry {
   site          Site?           @relation(fields: [siteId, organizationId], references: [id, organizationId])
   salesPayment  SalesPayment?   @relation(fields: [salesPaymentId, organizationId], references: [id, organizationId], onDelete: Cascade)
   salesDocument SalesDocument?  @relation(fields: [salesDocumentId, organizationId], references: [id, organizationId])
+  salarySheet   SalarySheet?    @relation(fields: [salarySheetId, organizationId], references: [id, organizationId])
 
   @@unique([salesPaymentId, organizationId])
   @@index([organizationId, date])
@@ -567,4 +575,125 @@ model FinanceEntry {
   @@index([salesDocumentId])
   @@index([categoryId])
   @@map("finance_entries")
+}
+
+enum SalarySheetStatus {
+  DRAFT
+  APPROVED
+}
+
+/// Which monthly amount a payroll rule is based on.
+enum PayBase {
+  /// Basic salary only.
+  BASIC
+  /// Basic plus housing, transport and other allowances.
+  GROSS
+}
+
+/// Payroll rules per company. Defaults are a starting point; each company confirms them.
+model PayrollSettings {
+  organizationId  String   @id
+  /// Overtime hourly rate is calculated from this monthly amount.
+  overtimeBase    PayBase  @default(GROSS)
+  /// Extra paid per overtime hour as a share of the hourly BASIC wage, basis points (5000 = 50%).
+  overtimePremium Int      @default(5000)
+  hoursPerDay     Int      @default(8)
+  /// Days used to turn a monthly salary into a daily rate. 0 = calendar days of that month.
+  monthDays       Int      @default(30)
+  /// Unpaid absent days are deducted from this monthly amount.
+  absenceBase     PayBase  @default(GROSS)
+  updatedById     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("payroll_settings")
+}
+
+model SalarySheet {
+  id              String            @id @default(cuid())
+  organizationId  String
+  year            Int
+  month           Int
+  /// Optional: the sheet covers one site (only a label and the template filter).
+  siteId          String?
+  status          SalarySheetStatus @default(DRAFT)
+  notes           String?
+  /// Rules used for the numbers (copied from payroll settings on every recalculation of a draft).
+  overtimeBase    PayBase
+  overtimePremium Int
+  hoursPerDay     Int
+  monthDays       Int
+  absenceBase     PayBase
+  /// Totals in halalas, kept equal to the sum of the lines.
+  workerCount     Int               @default(0)
+  totalGross      Int               @default(0)
+  totalOvertime   Int               @default(0)
+  totalAdditions  Int               @default(0)
+  totalDeductions Int               @default(0)
+  totalNet        Int               @default(0)
+  /// Day the salaries are paid; the "Salaries" expenses use this date.
+  payDate         DateTime?         @db.Date
+  approvedAt      DateTime?
+  approvedById    String?
+  createdById     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  site           Site?             @relation(fields: [siteId, organizationId], references: [id, organizationId])
+  lines          SalarySheetLine[]
+  financeEntries FinanceEntry[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, year, month])
+  @@map("salary_sheets")
+}
+
+/// One worker on one salary sheet. Worker details are copied so later edits do not change old sheets.
+model SalarySheetLine {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  sheetId            String
+  workerId           String
+  /// Copied from the sheet: a worker can be on only one sheet per month.
+  year               Int
+  month              Int
+  workerName         String
+  workerNameAr       String?
+  iqamaLast4         String
+  jobTitle           String?
+  siteId             String?
+  siteName           String?
+  /// Monthly amounts in halalas, copied from the worker.
+  basicSalary        Int
+  housingAllowance   Int
+  transportAllowance Int
+  otherAllowance     Int
+  /// Inputs. Days and hours in thousandths (1.5 = 1500), money in halalas.
+  absentDays         Int      @default(0)
+  overtimeHours      Int      @default(0)
+  additions          Int      @default(0)
+  advances           Int      @default(0)
+  deductions         Int      @default(0)
+  notes              String?
+  /// Calculated (halalas).
+  grossSalary        Int
+  absenceDeduction   Int      @default(0)
+  overtimePay        Int      @default(0)
+  netPay             Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sheet        SalarySheet  @relation(fields: [sheetId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  worker       Worker       @relation(fields: [workerId, organizationId], references: [id, organizationId])
+  site         Site?        @relation(fields: [siteId, organizationId], references: [id, organizationId])
+
+  @@unique([organizationId, year, month, workerId])
+  @@index([sheetId])
+  @@index([workerId])
+  @@index([siteId])
+  @@map("salary_sheet_lines")
 }
