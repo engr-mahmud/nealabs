@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { Alert } from "@/components/ui/alert";
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 import { maskPhone } from "@/lib/phone";
 import { PhoneForm, ResendCodeForm, VerifyCodeForm } from "@/features/auth/components/verify-phone-forms";
+import { DEMO_CODE_COOKIE } from "@/features/auth/phone-sms";
 import { getActiveCode } from "@/features/auth/phone-verification";
 import { safeNextPath } from "@/features/auth/schemas";
 import { requireSession } from "@/features/auth/session";
@@ -35,6 +39,7 @@ export default async function VerifyPhonePage({ searchParams }: { searchParams: 
 
   const phone = maskPhone(user.pendingPhone);
   const active = await getActiveCode(session.userId);
+  const demoCode = env().SMS_TRANSPORT === "demo" ? (await cookies()).get(DEMO_CODE_COOKIE)?.value : undefined;
   return (
     <AuthCard
       title={t("title")}
@@ -47,6 +52,7 @@ export default async function VerifyPhonePage({ searchParams }: { searchParams: 
     >
       {active ? (
         <div className="space-y-4">
+          {demoCode && <Alert tone="warning">{t("demoCode", { code: demoCode })}</Alert>}
           <VerifyCodeForm next={next} />
           <ResendCodeForm />
         </div>

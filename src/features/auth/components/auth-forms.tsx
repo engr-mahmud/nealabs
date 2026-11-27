@@ -104,7 +104,6 @@ export function SignUpForm({ next, defaultEmail }: { next?: string; defaultEmail
       <SubmitButton size="lg" className="w-full">
         {t("signUp.submit")}
       </SubmitButton>
-      <p className="text-center text-xs text-slate-500">{t("signUp.agree")}</p>
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { AppError } from "@/lib/errors";
 /**
  * SMS sending behind one function, chosen by SMS_TRANSPORT:
  * - "console": prints the message to the server log (development only)
+ * - "demo": sends nothing; the verify page shows the code (public demo only, see phone-sms.ts)
  * - "unifonic": Unifonic REST API (Saudi provider)
  * - "twilio": Twilio Messages API
  * Saudi rules require a registered sender name for SMS; set it up with the provider.
@@ -14,6 +15,8 @@ export async function sendSms(to: string, body: string): Promise<void> {
     case "console":
       if (config.NODE_ENV === "production") console.warn("[sms] SMS_TRANSPORT=console in production; SMS not delivered");
       console.info(`[sms] to=${to} body="${body}"`);
+      return;
+    case "demo":
       return;
     case "unifonic":
       return sendUnifonic(to, body);

@@ -61,7 +61,7 @@ The app logs `[security] ... Row Level Security is NOT enforced` at startup if t
 | `EMAIL_TRANSPORT` | yes | `smtp` in production, `console` for local development |
 | `EMAIL_FROM` | yes | Sender, e.g. `Company <no-reply@example.com>` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | with smtp | SMTP server credentials |
-| `SMS_TRANSPORT` | yes | `unifonic` or `twilio` in production, `console` for local development |
+| `SMS_TRANSPORT` | yes | `unifonic` or `twilio` in production, `console` for local development, `demo` for a public demo (no SMS, the code is shown on the verify page) |
 | `UNIFONIC_APP_SID`, `UNIFONIC_SENDER_ID` | with unifonic | Unifonic app ID and registered sender name |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | with twilio | Twilio credentials; `TWILIO_FROM` is a number or Messaging Service SID |
 | `TRIAL_DAYS` | no | Free trial length, default `7` |
@@ -88,10 +88,12 @@ Other checks: `npm run typecheck`, `npm run lint`, `npm run build`.
 
 Do not put real worker data (Iqama, passport) on this setup; production data belongs in-region.
 
-1. Create a Neon project. Use the default (non-superuser) role connection string as `DATABASE_URL` (pooled connection is fine).
-2. Run migrations once from your machine: `DATABASE_URL=<neon url> npx prisma migrate deploy` (and `npm run db:seed` for demo data).
-3. Import the repository in Vercel, set the environment variables above, deploy. The build runs `prisma generate && next build`.
-4. PDF download needs a Chromium build for serverless (for example `@sparticuz/chromium`), which is not set up yet. Until then the PDF button answers "not available" and the print view's **Print → Save as PDF** gives the same document.
+1. Import the repository in Vercel (Add New → Project). Do not deploy yet if it asks; open the project.
+2. Storage tab → Create Database → Neon (free) → connect it to the project. This sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` (used for migrations).
+3. Settings → Environment Variables: `SMS_TRANSPORT=demo`, `ALLOW_DEMO_SEED=true`, `FIELD_ENCRYPTION_KEY` (`openssl rand -base64 32`), `CRON_SECRET` (`openssl rand -hex 24`), `PAYMENT_GATEWAY=test`. `APP_URL` defaults to the Vercel production domain.
+4. Deploy. Vercel runs `npm run vercel-build`: `prisma generate`, `prisma migrate deploy`, the demo seed (only when `ALLOW_DEMO_SEED=true`; skipped when demo users exist) and `next build`. Demo login: `owner@demo.test` / `demo12345`.
+5. Emails use `EMAIL_TRANSPORT=console` unless SMTP is set, so password reset and invitation emails are not delivered on the demo.
+6. PDF download needs a Chromium build for serverless (for example `@sparticuz/chromium`), which is not set up yet. Until then the PDF button answers "not available" and the print view's **Print → Save as PDF** gives the same document.
 
 ## Deploy: VPS with Docker (production)
 

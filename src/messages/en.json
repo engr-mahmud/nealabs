@@ -519,7 +519,8 @@
     "change": "Wrong number? Change it",
     "enterPhone": "Enter your mobile number to receive a 6-digit code.",
     "sendCode": "Send code",
-    "verifyFirst": "Verify your mobile number to continue"
+    "verifyFirst": "Verify your mobile number to continue",
+    "demoCode": "Demo mode: no SMS is sent. Your code is {code}."
   },
   "sms": {
     "code": "{brand} code: {code}. Valid for 10 minutes. Do not share it with anyone."
