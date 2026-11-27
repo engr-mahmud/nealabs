@@ -207,12 +207,16 @@ export async function receivablesSummary(ctx: OrgContext, now = new Date()) {
   const today = todayInRiyadh(now);
   const db = tenantDb(ctx.organizationId);
   const unpaid = { type: "INVOICE" as const, status: "SENT" as const, balance: { gt: 0 } };
-  const [sums, overdue, unpaidCount] = await Promise.all([
-    db.salesDocument.aggregate({ where: unpaid, _sum: { balance: true } }),
-    db.salesDocument.count({ where: { ...unpaid, dueDate: { lt: today } } }),
-    db.salesDocument.count({ where: unpaid }),
+  const [all, overdue] = await Promise.all([
+    db.salesDocument.aggregate({ where: unpaid, _sum: { balance: true }, _count: { _all: true } }),
+    db.salesDocument.aggregate({ where: { ...unpaid, dueDate: { lt: today } }, _sum: { balance: true }, _count: { _all: true } }),
   ]);
-  return { outstanding: sums._sum.balance ?? 0, overdueCount: overdue, unpaidCount };
+  return {
+    outstanding: all._sum.balance ?? 0,
+    unpaidCount: all._count._all,
+    overdueAmount: overdue._sum.balance ?? 0,
+    overdueCount: overdue._count._all,
+  };
 }
 
 export async function getSalesDoc(ctx: OrgContext, id: string) {

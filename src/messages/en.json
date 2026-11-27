@@ -35,7 +35,8 @@
     "workforce": "Workforce",
     "sales": "Sales",
     "finance": "Finance",
-    "payroll": "Salaries"
+    "payroll": "Salaries",
+    "reports": "Reports"
   },
   "home": {
     "title": "Run your manpower company from one simple place",
@@ -314,7 +315,7 @@
   },
   "dashboard": {
     "welcome": "Welcome, {name}",
-    "subtitle": "Here is what to do next.",
+    "subtitle": "{date}",
     "setup": {
       "title": "Finish setting up your company",
       "progress": "{done} of {total} done",
@@ -324,29 +325,55 @@
       "bank": "Bank details",
       "team": "Invite your accountant"
     },
-    "next": {
-      "title": "Coming next",
-      "body": "Income and expenses, and salary sheets will appear here."
+    "receivables": {
+      "title": "To collect",
+      "unpaid": "{count, plural, =0 {No unpaid invoices} one {# unpaid invoice} other {# unpaid invoices}}",
+      "overdue": "{count, plural, one {# overdue} other {# overdue}}: {amount}",
+      "view": "View unpaid invoices",
+      "viewOverdue": "View overdue invoices",
+      "create": "Create an invoice"
+    },
+    "pending": {
+      "title": "Pending invoices",
+      "subtitle": "Waiting for your next step",
+      "none": "Nothing waiting. Every offer is invoiced.",
+      "draftInvoices": "{count, plural, one {# draft invoice to issue} other {# draft invoices to issue}}",
+      "openProformas": "{count, plural, one {# proforma to invoice} other {# proformas to invoice}}",
+      "openQuotations": "{count, plural, one {# quotation awaiting reply} other {# quotations awaiting reply}}",
+      "viewSales": "Open sales",
+      "createQuote": "Create a quotation"
+    },
+    "salaries": {
+      "title": "Unpaid salaries",
+      "none": "All approved salaries are paid.",
+      "sheets": "{count, plural, one {Approved on # salary sheet, not yet paid} other {Approved on # salary sheets, not yet paid}}",
+      "pay": "Mark salaries as paid",
+      "view": "Open salaries"
+    },
+    "month": {
+      "title": "{month}",
+      "profit": "Profit this month",
+      "loss": "Loss this month",
+      "lastMonth": "last month {amount}",
+      "income": "Income",
+      "expense": "Expenses",
+      "note": "Money received and paid, without VAT.",
+      "report": "Full report"
     },
     "expiring": {
       "title": "Expiring documents",
       "none": "No Iqama or passport expires in the next 30 days.",
       "count": "{count, plural, one {# document needs attention} other {# documents need attention}}",
+      "expired": "{count} expired",
       "viewAll": "View all",
-      "noWorkers": "Add your workers to get reminders before their Iqama or passport expires."
+      "noWorkers": "Add your workers to get reminders before their Iqama or passport expires.",
+      "addWorker": "Add a worker"
     },
     "sites": {
       "title": "Active sites",
-      "workers": "{count, plural, one {# active worker} other {# active workers}}",
+      "workers": "{count, plural, =0 {No active workers} one {# active worker} other {# active workers}}",
       "add": "Add a site",
-      "manage": "View sites"
-    },
-    "receivables": {
-      "title": "To collect",
-      "unpaid": "{count, plural, =0 {No unpaid invoices} one {# unpaid invoice} other {# unpaid invoices}}",
-      "overdue": "{count} overdue",
-      "view": "View unpaid invoices",
-      "create": "Create an invoice"
+      "profit": "Profit by site"
     }
   },
   "export": {
@@ -1100,7 +1127,72 @@
       "undo": "Undo paid",
       "undoAll": "Undo all paid marks",
       "undoAllConfirm": "Mark every worker on this sheet as unpaid again?",
-      "help": "Mark workers as paid when they get their money (cash or bank). Unpaid salaries show on the dashboard. The payslip shows the paid date."
+      "help": "Mark workers as paid when they get their money (cash or bank). Unpaid salaries show on the dashboard. The payslip shows the paid date.",
+      "filterUnpaid": "Not fully paid"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Clear answers about your money, salaries and documents.",
+    "all": "All reports",
+    "export": "Download Excel",
+    "hub": {
+      "profit": {
+        "title": "Profit and loss by site",
+        "body": "Income, expenses and profit for any period, per site and category."
+      },
+      "receivables": {
+        "title": "Money to collect by client",
+        "body": "Who owes you and how late each amount is (30, 60, 90+ days)."
+      },
+      "monthly": {
+        "title": "Month by month",
+        "body": "Income, expenses and profit for the last 12 months."
+      },
+      "salaries": {
+        "title": "Unpaid salaries",
+        "body": "Approved salary sheets where workers have not been paid yet."
+      },
+      "expiring": {
+        "title": "Expiring Iqama and passports",
+        "body": "Documents that are expired or expire in the next 30 days."
+      }
+    },
+    "receivables": {
+      "title": "Money to collect by client",
+      "subtitle": "Unpaid balances on issued invoices on {date}.",
+      "emptyTitle": "Nothing to collect",
+      "emptyBody": "All issued invoices are paid. New unpaid invoices will appear here.",
+      "createInvoice": "Create an invoice",
+      "total": "Total to collect",
+      "late": "Overdue",
+      "veryLate": "Over 90 days late",
+      "invoices": "{count, plural, one {# invoice} other {# invoices}}",
+      "invoicesHeader": "Invoices",
+      "client": "Client",
+      "rowTotal": "Total",
+      "oldest": "oldest {days} days late",
+      "note": "Days late are counted from each invoice's due date. Invoices without a due date count as not due."
+    },
+    "buckets": {
+      "current": "Not due yet",
+      "d1_30": "1–30 days late",
+      "d31_60": "31–60 days",
+      "d61_90": "61–90 days",
+      "d90plus": "Over 90 days"
+    },
+    "monthly": {
+      "title": "Month by month",
+      "subtitle": "Last 12 months, money received and paid, without VAT.",
+      "emptyTitle": "No income or expenses yet",
+      "emptyBody": "Invoice payments and approved salaries appear here automatically. You can also add other expenses.",
+      "addEntry": "Add an expense",
+      "income": "Income",
+      "expense": "Expenses",
+      "profit": "Profit",
+      "loss": "Loss",
+      "month": "Month",
+      "note": "Cash basis: each amount counts in the month money came in or went out. Click a month for its full report."
     }
   }
 }

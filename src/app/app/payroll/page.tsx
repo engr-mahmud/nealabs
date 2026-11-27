@@ -26,7 +26,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   const yearParam = Number.parseInt(param(sp, "year"), 10);
   const year = Number.isFinite(yearParam) ? yearParam : null;
   const statusParam = param(sp, "status");
-  const status = statusParam === "DRAFT" || statusParam === "APPROVED" ? statusParam : "";
+  const status = statusParam === "DRAFT" || statusParam === "APPROVED" || statusParam === "UNPAID" ? statusParam : "";
   const pageParam = Number.parseInt(param(sp, "page"), 10);
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
   const [t, locale, format, result] = await Promise.all([getTranslations("payroll"), getLocale(), getFormatter(), listSheets(ctx, { q, year, status, page })]);
@@ -78,6 +78,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
               <option value="">{t("allStatuses")}</option>
               <option value="DRAFT">{t("status.DRAFT")}</option>
               <option value="APPROVED">{t("status.APPROVED")}</option>
+              <option value="UNPAID">{t("payment.filterUnpaid")}</option>
             </FilterSelect>
           </div>
           <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50">

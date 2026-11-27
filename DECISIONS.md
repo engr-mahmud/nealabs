@@ -126,6 +126,12 @@ Short record of choices made, with the reason. Update when a decision changes.
 - **Exports:** salary sheet Excel; salary sheet PDF (A4 landscape, grouped by site with subtotals and signature column); payslips PDF (one A4 page per worker, all or one), EN or AR, from the same HTML renderer and Chromium as invoices; a print view works where PDF is unavailable. Exports are written to the audit log (salary data is personal data).
 - Not built yet: an advances ledger carried month to month, WPS/Mudad bank files, GOSI (out of scope).
 
+## Dashboard and reports (step 6, 2026-11-27)
+- **Dashboard = six cards, one link each** (`features/dashboard/service.ts` → `dashboardData`): To collect (unpaid balance on issued invoices, overdue count and amount), Pending invoices (draft invoices to issue, proformas and quotations sent but not converted), Unpaid salaries (approved minus "Mark as paid"), this month's income vs expenses (cash basis, without VAT, with last month's profit), Expiring documents (Iqama/passport, expired first), Active sites (+ active workers). The cards reuse the same functions as the full pages (`receivablesSummary`, `financeSummary`, `unpaidSalaries`, `listExpiringDocuments`), so the numbers always match. The setup checklist shows only to the Owner and only the steps not done.
+- **"Pending invoices" vs "To collect":** so two cards never show the same number, "To collect" is money owed on issued invoices and "Pending invoices" is sales paperwork waiting for the next step (open question 13).
+- **Reports page** (`/app/reports`) gathers all reports: profit and loss by site (step 4 page, unchanged), **money to collect by client** with aging buckets (not due, 1-30, 31-60, 61-90, 90+ days past the due date; no due date = not due), **month by month** (last 12 months, cash basis, without VAT; months before the first entry are hidden), unpaid salaries (salary list with a new "Not fully paid" filter) and expiring documents. Both new reports download as Excel (allowed in read-only mode).
+- No new tables or migrations in this step.
+
 ## Open questions
 1. ~~Trial per company or per user?~~ Answered: one trial per new email + phone, verified by SMS.
 2. SMS provider account: Unifonic (recommended) or Twilio, plus a registered sender name.
@@ -139,3 +145,4 @@ Short record of choices made, with the reason. Update when a decision changes.
 10. Finance reports are cash basis and without VAT. Is that how you want to see profit, or do you also need an accrual view (by invoice date)?
 11. Payroll defaults: is overtime "hourly full salary + 50% of hourly basic" and absence "full salary ÷ 30 per day" right for your workers' contracts? (Changeable per company.)
 12. ~~Approve = paid, or a separate paid step?~~ Answered: separate "Mark as paid" step (per worker or whole sheet).
+13. Dashboard "Pending invoices" shows drafts to issue and quotations/proformas not yet invoiced. Is that what you need, or did you mean unpaid invoices? (Unpaid money is already the "To collect" card.)
