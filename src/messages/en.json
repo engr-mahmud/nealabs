@@ -181,7 +181,10 @@
     "noWorkersForSheet": "No active workers to add. Every active worker is already on a salary sheet for this month, or there are no workers yet.",
     "timesheetNothingValid": "No row is ready. Fix the errors in Excel and upload the file again.",
     "timesheetWorkerOnOtherSheet": "Some workers are already on another salary sheet for this month. Check the file again.",
-    "chooseMonth": "Choose the month for this salary sheet."
+    "chooseMonth": "Choose the month for this salary sheet.",
+    "approveBeforePaying": "Approve the salary sheet first, then mark workers as paid.",
+    "sheetHasPaidWorkers": "Some workers are marked as paid. Undo the paid marks first, then reopen the sheet.",
+    "invalidPaidDate": "Choose the date the salary was paid."
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
@@ -948,7 +951,6 @@
     "emptyTitle": "No salary sheets yet",
     "emptyBody": "Download the timesheet for a month, fill in absences and overtime, and upload it. The salaries are calculated for you.",
     "workerCount": "{count, plural, one {# worker} other {# workers}}",
-    "paidOn": "paid {date}",
     "status": {
       "DRAFT": "Draft",
       "APPROVED": "Approved"
@@ -1003,8 +1005,8 @@
     "refreshHelp": "Changed a salary, allowance or site under Workforce, or the payroll rules? \"Update salaries from Workforce\" takes the new values and keeps what you entered here.",
     "approve": {
       "button": "Approve salary sheet",
-      "explain": "Total net pay {total}. After approval the sheet is locked and this amount is added to Finance as \"Salaries\" expenses on the pay date, one per site.",
-      "payDate": "Pay date",
+      "explain": "Total net pay {total}. After approval the sheet is locked and this amount is added to Finance as \"Salaries\" expenses on the salary date, one per site. You mark workers as paid on the next step.",
+      "payDate": "Salary date (used in Finance)",
       "confirm": "Approve and record expenses",
       "pending": "Approving…"
     },
@@ -1049,7 +1051,9 @@
       "refreshed": "Salaries updated from Workforce and the payroll rules.",
       "removed": "Worker removed from this sheet.",
       "added": "{count, plural, =0 {No missing workers: everyone active is already on a sheet this month.} one {# worker added.} other {# workers added.}}",
-      "deleted": "Draft salary sheet deleted."
+      "deleted": "Draft salary sheet deleted.",
+      "paid": "{count, plural, =0 {Nothing changed: already marked as paid.} one {# worker marked as paid.} other {# workers marked as paid.}}",
+      "unpaid": "Paid mark removed."
     },
     "settings": {
       "title": "Payroll rules",
@@ -1074,6 +1078,29 @@
       "saved": "Payroll rules saved. New salary sheets use them; open drafts use them after \"Update salaries from Workforce\".",
       "appliesTo": "Approved salary sheets keep the rules they were made with.",
       "updatedAt": "Last changed {date}"
+    },
+    "salaryDate": "salary date {date}",
+    "reopenPaidHelp": "Some workers are marked as paid. Undo the paid marks first if you need to reopen this sheet.",
+    "payment": {
+      "title": "Paying the workers",
+      "NONE": "Unpaid",
+      "PARTLY": "Partly paid",
+      "PAID": "Paid",
+      "listBadge": {
+        "NONE": "Approved · unpaid",
+        "PARTLY": "Partly paid",
+        "PAID": "Paid"
+      },
+      "summary": "{paid} of {total} paid · unpaid {unpaid}",
+      "paidOn": "Paid on",
+      "markAll": "Mark all as paid",
+      "markRest": "Mark the rest as paid",
+      "markOne": "Mark paid",
+      "paidBadge": "Paid {date}",
+      "undo": "Undo paid",
+      "undoAll": "Undo all paid marks",
+      "undoAllConfirm": "Mark every worker on this sheet as unpaid again?",
+      "help": "Mark workers as paid when they get their money (cash or bank). Unpaid salaries show on the dashboard. The payslip shows the paid date."
     }
   }
 }

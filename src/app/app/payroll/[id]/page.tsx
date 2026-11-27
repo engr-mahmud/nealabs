@@ -19,11 +19,11 @@ import { todayInRiyadh } from "@/features/master-data/expiry";
 import { formatPercent, formatQuantity } from "@/features/sales/totals";
 import { effectiveMonthDays } from "@/features/payroll/calc";
 import { monthLabel } from "@/features/payroll/documents";
-import { addMissingAction, deleteSheetAction, refreshDraftAction, removeLineAction, reopenAction } from "@/features/payroll/actions";
+import { addMissingAction, deleteSheetAction, markPaidAction, markUnpaidAction, refreshDraftAction, removeLineAction, reopenAction } from "@/features/payroll/actions";
 import { ApproveForm } from "@/features/payroll/components/approve-form";
 import { LineEditor } from "@/features/payroll/components/line-editor";
 import { NotesForm } from "@/features/payroll/components/notes-form";
-import { getSheet, sheetLabelEn, type SalaryLine } from "@/features/payroll/service";
+import { getSheet, paymentState, sheetLabelEn, type SalaryLine } from "@/features/payroll/service";
 
 export const metadata: Metadata = { title: "Salary sheet" };
 
@@ -41,7 +41,13 @@ export default async function SheetPage({ params, searchParams }: { params: Prom
   const draft = sheet.status === "DRAFT";
   const canWrite = canWriteData(ctx);
   const editable = draft && canWrite;
+  const payState = paymentState(sheet);
+  const canPay = !draft && canWrite;
   const canReopen = !draft && can(ctx.role, "payroll.reopen") && !ctx.access.readOnly;
+  const paidCount = sheet.lines.filter((l) => l.paidAt).length;
+  const today = toDateInput(todayInRiyadh());
+  const dateInput = "block min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-base focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none";
+  const shortDate = (d: Date) => format.dateTime(d, { dateStyle: "medium", timeZone: "UTC" });
   const done = param(sp, "done");
   const error = param(sp, "error");
   const q = param(sp, "q").toLowerCase();
@@ -66,6 +72,8 @@ export default async function SheetPage({ params, searchParams }: { params: Prom
     refreshed: t("done.refreshed"),
     removed: t("done.removed"),
     added: t("done.added", { count: Number(param(sp, "n")) || 0 }),
+    paid: t("done.paid", { count: Number(param(sp, "n")) || 0 }),
+    unpaid: t("done.unpaid"),
   };
 
   return (
@@ -79,10 +87,11 @@ export default async function SheetPage({ params, searchParams }: { params: Prom
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold text-slate-900">{t("sheetTitle", { month: title })}</h1>
             <Badge tone={draft ? "warning" : "success"}>{t(`status.${sheet.status}`)}</Badge>
+            {payState ? <Badge tone={payState === "PAID" ? "success" : "warning"}>{t(`payment.${payState}`)}</Badge> : null}
           </div>
           <p className="mt-1 text-slate-600">
             {sheet.site?.name ?? t("allSites")} · {t("workerCount", { count: sheet.workerCount })}
-            {sheet.payDate ? ` · ${t("paidOn", { date: format.dateTime(sheet.payDate, { dateStyle: "medium", timeZone: "UTC" }) })}` : ""}
+            {sheet.payDate ? ` · ${t("salaryDate", { date: shortDate(sheet.payDate) })}` : ""}
           </p>
         </div>
         <div className="sm:text-end">
@@ -151,6 +160,38 @@ export default async function SheetPage({ params, searchParams }: { params: Prom
           </Link>
         </Alert>
       )}
+
+      {!draft ? (
+        <Card className="space-y-3">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+            <CardTitle className="text-base">{t("payment.title")}</CardTitle>
+            <p className="text-sm text-slate-700">
+              {t("payment.summary", { paid: paidCount, total: sheet.workerCount, unpaid: money(sheet.totalNet - sheet.paidNet) })}
+            </p>
+          </div>
+          {canPay && payState !== "PAID" ? (
+            <form action={markPaidAction} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <input type="hidden" name="sheetId" value={sheet.id} />
+              <div className="space-y-1.5">
+                <label htmlFor="paid-all" className="block text-sm font-medium text-slate-800">
+                  {t("payment.paidOn")}
+                </label>
+                <input id="paid-all" name="paidOn" type="date" defaultValue={today} required className={dateInput} />
+              </div>
+              <Button type="submit" size="lg">
+                {paidCount ? t("payment.markRest") : t("payment.markAll")}
+              </Button>
+            </form>
+          ) : null}
+          <p className="text-sm text-slate-500">{t("payment.help")}</p>
+          {canPay && paidCount > 0 ? (
+            <form action={markUnpaidAction}>
+              <input type="hidden" name="sheetId" value={sheet.id} />
+              <ConfirmSubmit label={t("payment.undoAll")} confirmText={t("payment.undoAllConfirm")} confirmLabel={t("payment.undoAll")} cancelLabel={tc("cancel")} />
+            </form>
+          ) : null}
+        </Card>
+      ) : null}
 
       <Card className="space-y-3">
         <CardTitle className="text-base">{t("downloads")}</CardTitle>
@@ -236,11 +277,35 @@ export default async function SheetPage({ params, searchParams }: { params: Prom
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
                           <p className="font-semibold text-slate-900 tabular-nums">{money(l.netPay)}</p>
+                          {l.paidAt ? <Badge tone="success">{t("payment.paidBadge", { date: shortDate(l.paidAt) })}</Badge> : !draft ? <Badge tone="warning">{t("payment.NONE")}</Badge> : null}
                           <a href={`${base}/payslips?lang=${lang}&line=${l.id}`} className="text-sm font-medium text-brand hover:underline">
                             {t("payslip")}
                           </a>
                         </div>
                       </div>
+                      {canPay ? (
+                        l.paidAt ? (
+                          <form action={markUnpaidAction} className="mt-2">
+                            <input type="hidden" name="sheetId" value={sheet.id} />
+                            <input type="hidden" name="lineId" value={l.id} />
+                            <button type="submit" className="inline-flex min-h-9 items-center rounded-lg px-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+                              {t("payment.undo")}
+                            </button>
+                          </form>
+                        ) : (
+                          <form action={markPaidAction} className="mt-2 flex flex-wrap items-center gap-2">
+                            <input type="hidden" name="sheetId" value={sheet.id} />
+                            <input type="hidden" name="lineId" value={l.id} />
+                            <label className="sr-only" htmlFor={`paid-${l.id}`}>
+                              {t("payment.paidOn")}
+                            </label>
+                            <input id={`paid-${l.id}`} name="paidOn" type="date" defaultValue={today} required className={cn(dateInput, "min-h-9 text-sm")} />
+                            <Button type="submit" variant="secondary" size="sm">
+                              {t("payment.markOne")}
+                            </Button>
+                          </form>
+                        )
+                      ) : null}
                       {editable ? (
                         <details className="mt-2 group">
                           <summary className="inline-flex min-h-9 cursor-pointer list-none items-center rounded-lg px-2 text-sm font-medium text-slate-700 hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
@@ -297,11 +362,11 @@ export default async function SheetPage({ params, searchParams }: { params: Prom
       ) : null}
       {canReopen ? (
         <Card className="space-y-2">
-          <p className="text-sm text-slate-700">{t("reopenHelp")}</p>
-          <form action={reopenAction}>
+          <p className="text-sm text-slate-700">{paidCount ? t("reopenPaidHelp") : t("reopenHelp")}</p>
+          {paidCount ? null : <form action={reopenAction}>
             <input type="hidden" name="sheetId" value={sheet.id} />
             <ConfirmSubmit label={t("reopen")} confirmText={t("reopenConfirm")} confirmLabel={t("reopen")} cancelLabel={tc("cancel")} />
-          </form>
+          </form>}
         </Card>
       ) : null}
     </div>

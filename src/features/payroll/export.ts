@@ -25,6 +25,7 @@ const COLS = [
   { key: "advances", en: "Advances", ar: "السلف", width: 11, money: true },
   { key: "deductions", en: "Other deductions", ar: "خصومات أخرى", width: 11, money: true },
   { key: "net", en: "Net pay", ar: "صافي الراتب", width: 13, money: true },
+  { key: "paidOn", en: "Paid on", ar: "تاريخ الدفع", width: 12 },
   { key: "notes", en: "Notes", ar: "ملاحظات", width: 26 },
 ] as const;
 
@@ -69,6 +70,7 @@ export async function buildSalarySheetWorkbook(sheet: SalarySheetDetail, opts: {
       sar(l.advances),
       sar(l.deductions),
       sar(l.netPay),
+      l.paidAt ? l.paidAt.toISOString().slice(0, 10) : "",
       l.notes ?? "",
     ]);
   });
@@ -92,6 +94,7 @@ export async function buildSalarySheetWorkbook(sheet: SalarySheetDetail, opts: {
     sum((l) => l.advances),
     sum((l) => l.deductions),
     sum((l) => l.netPay),
+    "",
     "",
   ]);
   total.font = { bold: true };

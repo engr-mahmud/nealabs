@@ -20,6 +20,10 @@ import {
   getPayrollSettings,
   getSheet,
   importTimesheet,
+  markPaid,
+  markUnpaid,
+  paymentState,
+  unpaidSalaries,
   listSheets,
   previewTimesheet,
   refreshDraft,
@@ -303,6 +307,65 @@ describe("payroll: timesheet to salary sheet", () => {
     // Net pay must equal its parts and cannot be negative, whatever the code does.
     await expect(tenantDb(a.org.id).salarySheetLine.update({ where: { id: lineId }, data: { netPay: 1 } })).rejects.toThrow();
     await expect(tenantDb(a.org.id).salarySheet.update({ where: { id: sheetId }, data: { status: "APPROVED" } })).rejects.toThrow(); // needs approvedAt + payDate
+  });
+});
+
+describe("payroll: marking salaries as paid", () => {
+  beforeEach(resetDb);
+
+  it("after approval, marks one worker or the rest as paid, undo, and blocks reopening while paid", async () => {
+    const { ctx, org, w1 } = await setup();
+    const sheetId = await createSheetForActiveWorkers(ctx, { ...NOV, siteId: null });
+    await expect(markPaid(ctx, sheetId, d("2026-12-01"), null)).rejects.toMatchObject({ code: "approveBeforePaying" });
+    await approveSheet(ctx, sheetId, d("2026-11-30"));
+    let sheet = await getSheet(ctx, sheetId);
+    expect(paymentState(sheet)).toBe("NONE");
+    expect(await unpaidSalaries(ctx)).toEqual({ amount: sheet.totalNet, sheets: 1 });
+
+    const rahim = sheet.lines.find((l) => l.workerId === w1.id)!;
+    expect(await markPaid(ctx, sheetId, d("2026-12-01"), rahim.id)).toBe(1);
+    expect(await markPaid(ctx, sheetId, d("2026-12-05"), rahim.id)).toBe(0); // already paid, date kept
+    sheet = await getSheet(ctx, sheetId);
+    expect(sheet.paidNet).toBe(rahim.netPay);
+    expect(paymentState(sheet)).toBe("PARTLY");
+    expect(sheet.lines.find((l) => l.id === rahim.id)!.paidAt?.toISOString().slice(0, 10)).toBe("2026-12-01");
+    expect((await unpaidSalaries(ctx)).amount).toBe(sheet.totalNet - rahim.netPay);
+
+    await expect(reopenSheet(ctx, sheetId)).rejects.toMatchObject({ code: "sheetHasPaidWorkers" });
+
+    const accountant = await addMember(org.id, "ACCOUNTANT");
+    expect(await markPaid(accountant.ctx, sheetId, d("2026-12-02"), null)).toBe(2);
+    sheet = await getSheet(ctx, sheetId);
+    expect(paymentState(sheet)).toBe("PAID");
+    expect(await unpaidSalaries(ctx)).toEqual({ amount: 0, sheets: 0 });
+
+    // The payslip shows the paid date; Excel has a Paid on column.
+    const html = renderPayslipsHtml(sheet, [sheet.lines.find((l) => l.id === rahim.id)!], { nameEn: "Co", nameAr: null, crNumber: null, addressLine: null, city: null }, { lang: "en", forPdf: true, logoDataUri: null });
+    expect(html).toContain("Paid on");
+    expect(html).toContain("01/12/2026");
+
+    expect(await markUnpaid(ctx, sheetId, rahim.id)).toBe(1);
+    expect((await getSheet(ctx, sheetId)).paidNet).toBe(sheet.totalNet - rahim.netPay);
+    await markUnpaid(ctx, sheetId, null);
+    expect((await getSheet(ctx, sheetId)).paidNet).toBe(0);
+    await reopenSheet(ctx, sheetId);
+
+    const audit = await tenantDb(ctx.organizationId).auditLog.findMany({ where: { entityId: sheetId }, select: { action: true } });
+    expect(audit.filter((a) => a.action === "payroll.marked_paid")).toHaveLength(2);
+    expect(audit.filter((a) => a.action === "payroll.marked_unpaid")).toHaveLength(2);
+
+    // The database refuses a paid amount on a draft or above the net pay.
+    await expect(tenantDb(ctx.organizationId).salarySheet.update({ where: { id: sheetId }, data: { paidNet: 1 } })).rejects.toThrow();
+  });
+
+  it("other companies and read-only mode cannot mark salaries as paid", async () => {
+    const a = await setup("Alpha");
+    const b = await orgWithSite("Beta");
+    const sheetId = await createSheetForActiveWorkers(a.ctx, { ...NOV, siteId: null });
+    await approveSheet(a.ctx, sheetId, d("2026-11-30"));
+    await expect(markPaid(b.ctx, sheetId, d("2026-12-01"), null)).rejects.toBeInstanceOf(NotFoundError);
+    const { ctx: expiredCtx } = await createOwnerWithOrg("Expired", new Date(Date.now() - 30 * DAY));
+    await expect(markPaid({ ...a.ctx, access: expiredCtx.access }, sheetId, d("2026-12-01"), null)).rejects.toBeInstanceOf(ReadOnlyError);
   });
 });
 

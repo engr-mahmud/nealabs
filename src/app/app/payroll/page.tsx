@@ -13,7 +13,7 @@ import { canWriteData } from "@/features/master-data/permissions";
 import { param } from "@/features/master-data/list";
 import { monthLabel } from "@/features/payroll/documents";
 import { PayrollTabs } from "@/features/payroll/components/payroll-tabs";
-import { listSheets } from "@/features/payroll/service";
+import { listSheets, paymentState } from "@/features/payroll/service";
 
 export const metadata: Metadata = { title: "Salaries" };
 
@@ -104,13 +104,16 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                   </p>
                   <p className="truncate text-sm text-slate-500">
                     {t("workerCount", { count: s.workerCount })}
-                    {s.payDate ? ` · ${t("paidOn", { date: format.dateTime(s.payDate, { dateStyle: "medium", timeZone: "UTC" }) })}` : ""}
+                    {s.payDate ? ` · ${t("salaryDate", { date: format.dateTime(s.payDate, { dateStyle: "medium", timeZone: "UTC" }) })}` : ""}
                     {s.notes ? ` · ${s.notes}` : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <p className="font-semibold text-slate-900 tabular-nums">{formatSar(s.totalNet, locale)}</p>
-                  <Badge tone={s.status === "APPROVED" ? "success" : "warning"}>{t(`status.${s.status}`)}</Badge>
+                  {(() => {
+                    const pay = paymentState(s);
+                    return pay ? <Badge tone={pay === "PAID" ? "success" : "warning"}>{t(`payment.listBadge.${pay}`)}</Badge> : <Badge tone="neutral">{t("status.DRAFT")}</Badge>;
+                  })()}
                 </div>
               </Link>
             </li>

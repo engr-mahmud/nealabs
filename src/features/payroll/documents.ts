@@ -23,7 +23,8 @@ const LABELS = {
   status: ["Status", "الحالة"],
   draft: ["Draft – not approved", "مسودة – غير معتمد"],
   approved: ["Approved", "معتمد"],
-  payDate: ["Pay date", "تاريخ الصرف"],
+  payDate: ["Salary date", "تاريخ الرواتب"],
+  paidOn: ["Paid on", "تاريخ الدفع"],
   name: ["Name", "الاسم"],
   iqama: ["Iqama", "الإقامة"],
   jobTitle: ["Job title", "المهنة"],
@@ -339,7 +340,7 @@ export function renderPayslipsHtml(sheet: SalarySheetDetail, lines: SalaryLine[]
     <div class="kv"><span class="k">${L("iqama")}</span><span class="v num">•••• ${esc(l.iqamaLast4)}</span></div>
     ${l.jobTitle ? `<div class="kv"><span class="k">${L("jobTitle")}</span><span class="v">${esc(l.jobTitle)}</span></div>` : ""}
     ${l.siteName ? `<div class="kv"><span class="k">${L("site")}</span><span class="v">${esc(l.siteName)}</span></div>` : ""}
-    ${sheet.payDate ? `<div class="kv"><span class="k">${L("payDate")}</span><span class="v num">${dateOnly(sheet.payDate)}</span></div>` : ""}
+    ${l.paidAt ? `<div class="kv"><span class="k">${L("paidOn")}</span><span class="v num">${dateOnly(l.paidAt)}</span></div>` : ""}
   </div>
 </section>
 <section class="cols">

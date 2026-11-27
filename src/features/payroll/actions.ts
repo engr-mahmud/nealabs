@@ -8,13 +8,15 @@ import { AppError } from "@/lib/errors";
 import { rateLimit } from "@/lib/rate-limit";
 import { formId } from "@/features/master-data/actions-helpers";
 import { requireOrgAction } from "@/features/organizations/current";
-import { approveSchema, lineInputSchema, notesSchema, periodSchema, settingsSchema } from "./schemas";
+import { approveSchema, lineInputSchema, notesSchema, paidSchema, periodSchema, settingsSchema } from "./schemas";
 import {
   addMissingWorkers,
   approveSheet,
   createSheetForActiveWorkers,
   deleteDraftSheet,
   importTimesheet,
+  markPaid,
+  markUnpaid,
   previewTimesheet,
   refreshDraft,
   removeLine,
@@ -149,6 +151,24 @@ export async function deleteSheetAction(formData: FormData) {
     },
     "deleted",
   );
+}
+
+/** Mark one worker (lineId) or every unpaid worker as paid on a date. */
+export async function markPaidAction(formData: FormData) {
+  await onSheet(
+    formData,
+    async (id) => {
+      const parsed = paidSchema.safeParse({ paidOn: formData.get("paidOn") ?? "" });
+      if (!parsed.success) throw new AppError("invalidPaidDate");
+      const n = await markPaid(await requireOrgAction(), id, parsed.data.paidOn, formId(formData, "lineId") || null);
+      return `${sheetPath(id)}?done=paid&n=${n}`;
+    },
+    "paid",
+  );
+}
+
+export async function markUnpaidAction(formData: FormData) {
+  await onSheet(formData, async (id) => void (await markUnpaid(await requireOrgAction(), id, formId(formData, "lineId") || null)), "unpaid");
 }
 
 export async function approveAction(_prev: ActionState | null, formData: FormData): Promise<ActionState> {

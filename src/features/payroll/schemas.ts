@@ -76,6 +76,20 @@ export const periodSchema = z
   .transform((v) => ({ year: Number(v.slice(0, 4)), month: Number(v.slice(5, 7)) }))
   .refine((p) => p.month >= 1 && p.month <= 12 && p.year >= payrollConfig.minYear && p.year <= 2200, { error: "invalidMonth" });
 
+const requiredDate = z
+    .string()
+    .trim()
+    .transform((v, ctx) => {
+      const d = parseDateInput(v);
+      if (!d) {
+        ctx.addIssue({ code: "custom", message: "invalidDate" });
+        return z.NEVER;
+      }
+      return d;
+    });
+
+export const paidSchema = z.object({ paidOn: requiredDate });
+
 export const approveSchema = z.object({
   payDate: z
     .string()

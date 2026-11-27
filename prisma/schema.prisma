@@ -633,7 +633,9 @@ model SalarySheet {
   totalAdditions  Int               @default(0)
   totalDeductions Int               @default(0)
   totalNet        Int               @default(0)
-  /// Day the salaries are paid; the "Salaries" expenses use this date.
+  /// Net pay of the workers marked as paid (halalas). Unpaid = totalNet − paidNet.
+  paidNet         Int               @default(0)
+  /// Salary date chosen on approval; the "Salaries" expenses use this date.
   payDate         DateTime?         @db.Date
   approvedAt      DateTime?
   approvedById    String?
@@ -683,6 +685,9 @@ model SalarySheetLine {
   absenceDeduction   Int      @default(0)
   overtimePay        Int      @default(0)
   netPay             Int
+  /// Day the money was handed to the worker (set after approval with "Mark as paid").
+  paidAt             DateTime? @db.Date
+  paidById           String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

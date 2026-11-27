@@ -71,7 +71,7 @@ export async function listSheets(ctx: OrgContext, query: SheetListQuery) {
       orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
       take,
       skip: (query.page - 1) * take,
-      select: { id: true, year: true, month: true, status: true, workerCount: true, totalNet: true, payDate: true, notes: true, site: { select: { name: true } } },
+      select: { id: true, year: true, month: true, status: true, workerCount: true, totalNet: true, paidNet: true, payDate: true, notes: true, site: { select: { name: true } } },
     }),
     db.salarySheet.count({ where }),
     db.salarySheet.findMany({ distinct: ["year"], select: { year: true }, orderBy: { year: "desc" } }),
@@ -557,6 +557,8 @@ export async function approveSheet(ctx: OrgContext, sheetId: string, payDate: Da
 export async function reopenSheet(ctx: OrgContext, sheetId: string) {
   assertCan(ctx, "payroll.reopen");
   return tenantTransaction(ctx.organizationId, async (tx) => {
+    const paid = await tx.salarySheetLine.count({ where: { sheetId, paidAt: { not: null } } });
+    if (paid > 0) throw new AppError("sheetHasPaidWorkers");
     const updated = await tx.salarySheet.updateMany({ where: { id: sheetId, status: "APPROVED" }, data: { status: "DRAFT", approvedAt: null, approvedById: null } });
     if (updated.count === 0) {
       const exists = await tx.salarySheet.findFirst({ where: { id: sheetId }, select: { id: true } });
@@ -566,6 +568,76 @@ export async function reopenSheet(ctx: OrgContext, sheetId: string) {
     const removed = await removeSalarySheetExpenses(tx, ctx.organizationId, sheetId, ctx.userId);
     await writeAudit(tx, { organizationId: ctx.organizationId, userId: ctx.userId, action: "payroll.sheet_reopened", entityType: "SalarySheet", entityId: sheetId, metadata: { expensesRemoved: removed } });
   });
+}
+
+// ---------------------------------------------------------------- paying out
+
+export type PaymentState = "NONE" | "PARTLY" | "PAID";
+
+/** Paid state of an approved sheet, from its totals. */
+export function paymentState(sheet: { status: SalarySheetStatus; totalNet: number; paidNet: number; workerCount: number }): PaymentState | null {
+  if (sheet.status !== "APPROVED") return null;
+  if (sheet.paidNet === 0 && sheet.totalNet > 0) return "NONE";
+  return sheet.paidNet >= sheet.totalNet ? "PAID" : "PARTLY";
+}
+
+async function lockApproved(tx: TxClient, sheetId: string) {
+  const rows = await tx.$queryRaw<{ status: SalarySheetStatus }[]>`SELECT status FROM salary_sheets WHERE id = ${sheetId} FOR UPDATE`;
+  if (rows.length === 0) throw new NotFoundError();
+  if (rows[0]?.status !== "APPROVED") throw new AppError("approveBeforePaying");
+}
+
+async function refreshPaid(tx: TxClient, sheetId: string) {
+  const paid = await tx.salarySheetLine.aggregate({ where: { sheetId, paidAt: { not: null } }, _sum: { netPay: true } });
+  await tx.salarySheet.update({ where: { id: sheetId }, data: { paidNet: paid._sum.netPay ?? 0 } });
+}
+
+/**
+ * Records that salaries were handed out, after approval: one worker (lineId) or every
+ * worker not yet paid. Separate from approval, so the dashboard can show unpaid salaries.
+ */
+export async function markPaid(ctx: OrgContext, sheetId: string, paidOn: Date, lineId: string | null) {
+  assertCan(ctx, "data.write");
+  return tenantTransaction(ctx.organizationId, async (tx) => {
+    await lockApproved(tx, sheetId);
+    const where = { sheetId, paidAt: null, ...(lineId ? { id: lineId } : {}) };
+    const lines = await tx.salarySheetLine.findMany({ where, select: { netPay: true } });
+    if (lineId && lines.length === 0) {
+      const exists = await tx.salarySheetLine.findFirst({ where: { id: lineId, sheetId }, select: { id: true } });
+      if (!exists) throw new NotFoundError();
+      return 0; // already paid
+    }
+    const { count } = await tx.salarySheetLine.updateMany({ where, data: { paidAt: paidOn, paidById: ctx.userId } });
+    await refreshPaid(tx, sheetId);
+    if (count) {
+      await writeAudit(tx, { organizationId: ctx.organizationId, userId: ctx.userId, action: "payroll.marked_paid", entityType: "SalarySheet", entityId: sheetId, metadata: { lineId, workers: count, amount: lines.reduce((a, l) => a + l.netPay, 0), paidOn: paidOn.toISOString().slice(0, 10) } });
+    }
+    return count;
+  });
+}
+
+/** Undo "paid" for one worker or the whole sheet (a mistake in the paid mark, not a refund). */
+export async function markUnpaid(ctx: OrgContext, sheetId: string, lineId: string | null) {
+  assertCan(ctx, "data.write");
+  return tenantTransaction(ctx.organizationId, async (tx) => {
+    await lockApproved(tx, sheetId);
+    const where = { sheetId, paidAt: { not: null }, ...(lineId ? { id: lineId } : {}) };
+    const lines = await tx.salarySheetLine.findMany({ where, select: { netPay: true } });
+    const { count } = await tx.salarySheetLine.updateMany({ where, data: { paidAt: null, paidById: null } });
+    await refreshPaid(tx, sheetId);
+    if (count) {
+      await writeAudit(tx, { organizationId: ctx.organizationId, userId: ctx.userId, action: "payroll.marked_unpaid", entityType: "SalarySheet", entityId: sheetId, metadata: { lineId, workers: count, amount: lines.reduce((a, l) => a + l.netPay, 0) } });
+    }
+    return count;
+  });
+}
+
+/** Salaries approved but not yet handed out, for the dashboard. */
+export async function unpaidSalaries(ctx: OrgContext) {
+  assertCan(ctx, "data.read");
+  const sheets = await tenantDb(ctx.organizationId).salarySheet.findMany({ where: { status: "APPROVED" }, select: { totalNet: true, paidNet: true } });
+  const open = sheets.filter((s) => s.paidNet < s.totalNet);
+  return { amount: open.reduce((a, s) => a + s.totalNet - s.paidNet, 0), sheets: open.length };
 }
 
 /** Written when salary data leaves the app (Excel or PDF), because salaries are personal data. */

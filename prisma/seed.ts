@@ -13,7 +13,7 @@ import { addPayment, convertSalesDoc, createCreditNote, createSalesDoc, getSales
 import { createEntry, listCategories } from "../src/features/finance/service";
 import { createWorker } from "../src/features/workforce/service";
 import { todayInRiyadh } from "../src/features/master-data/expiry";
-import { approveSheet, createSheetForActiveWorkers, getSheet, updateLine } from "../src/features/payroll/service";
+import { approveSheet, createSheetForActiveWorkers, getSheet, markPaid, updateLine } from "../src/features/payroll/service";
 
 async function main() {
   if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_SEED !== "true") {
@@ -135,7 +135,9 @@ async function main() {
   if (lines[1]) await updateLine(ctx, lines[1].id, { ...none, absentDays: 2000 });
   if (lines[2]) await updateLine(ctx, lines[2].id, { ...none, overtimeHours: 12500, additions: 20000, notes: "Good work bonus" });
   await approveSheet(ctx, sheetId, inDays(-1));
-  console.log("Seeded payroll: last month's salary sheet, approved.");
+  // Everyone paid except one worker, so "unpaid salaries" has something to show.
+  for (const line of lines.slice(0, -1)) await markPaid(ctx, sheetId, inDays(-1), line.id);
+  console.log("Seeded payroll: last month's salary sheet, approved, all but one worker paid.");
   console.log("Seeded: owner@demo.test / accountant@demo.test (password demo12345)");
 }
 
