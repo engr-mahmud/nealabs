@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computeTotals, formatPercent, formatQuantity, lineTotal, mulDivRound, parsePercent, parseQuantity } from "@/features/sales/totals";
 import { amountString, decodeZatcaQr, qrTimestamp, zatcaQrPayload } from "@/features/sales/zatca-qr";
-import { displayStatus } from "@/features/sales/status";
+import { displayStatus, type StatusInput } from "@/features/sales/status";
 import { salesDocSchema } from "@/features/sales/schemas";
 import { AppError } from "@/lib/errors";
 
@@ -123,21 +123,32 @@ describe("ZATCA Phase 1 QR", () => {
 
 describe("document status", () => {
   const today = new Date("2026-11-27T00:00:00Z");
-  const inv = { type: "INVOICE" as const, status: "SENT" as const, total: 1000, paidAmount: 0, dueDate: new Date("2026-12-01T00:00:00Z"), converted: false };
+  const due = new Date("2026-12-01T00:00:00Z");
+  const inv = (o: Partial<StatusInput> = {}): StatusInput => {
+    const d = { type: "INVOICE" as const, status: "SENT" as const, total: 1000, paidAmount: 0, creditedAmount: 0, dueDate: due, converted: false, ...o };
+    return { ...d, balance: Math.max(0, d.total - d.paidAmount - d.creditedAmount) };
+  };
 
   it("derives invoice payment status", () => {
-    expect(displayStatus({ ...inv, status: "DRAFT" }, today)).toBe("draft");
-    expect(displayStatus(inv, today)).toBe("sent");
-    expect(displayStatus({ ...inv, paidAmount: 400 }, today)).toBe("partial");
-    expect(displayStatus({ ...inv, paidAmount: 1000 }, today)).toBe("paid");
-    expect(displayStatus({ ...inv, dueDate: new Date("2026-11-26T00:00:00Z") }, today)).toBe("due");
-    expect(displayStatus({ ...inv, dueDate: today }, today)).toBe("sent"); // due today is not overdue yet
-    expect(displayStatus({ ...inv, paidAmount: 1000, dueDate: new Date("2026-01-01T00:00:00Z") }, today)).toBe("paid");
+    expect(displayStatus(inv({ status: "DRAFT" }), today)).toBe("draft");
+    expect(displayStatus(inv(), today)).toBe("sent");
+    expect(displayStatus(inv({ paidAmount: 400 }), today)).toBe("partial");
+    expect(displayStatus(inv({ paidAmount: 1000 }), today)).toBe("paid");
+    expect(displayStatus(inv({ dueDate: new Date("2026-11-26T00:00:00Z") }), today)).toBe("due");
+    expect(displayStatus(inv({ dueDate: today }), today)).toBe("sent"); // due today is not overdue yet
+    expect(displayStatus(inv({ paidAmount: 1000, dueDate: new Date("2026-01-01T00:00:00Z") }), today)).toBe("paid");
+  });
+
+  it("counts credit notes against the balance", () => {
+    expect(displayStatus(inv({ creditedAmount: 300 }), today)).toBe("partial");
+    expect(displayStatus(inv({ creditedAmount: 300, paidAmount: 700 }), today)).toBe("paid");
+    expect(displayStatus(inv({ creditedAmount: 1000 }), today)).toBe("credited");
   });
 
   it("shows converted quotations and proformas", () => {
-    expect(displayStatus({ ...inv, type: "QUOTATION", status: "DRAFT" }, today)).toBe("draft");
-    expect(displayStatus({ ...inv, type: "QUOTATION" }, today)).toBe("sent");
-    expect(displayStatus({ ...inv, type: "PROFORMA", converted: true }, today)).toBe("converted");
+    expect(displayStatus(inv({ type: "QUOTATION", status: "DRAFT" }), today)).toBe("draft");
+    expect(displayStatus(inv({ type: "QUOTATION" }), today)).toBe("sent");
+    expect(displayStatus(inv({ type: "PROFORMA", converted: true }), today)).toBe("converted");
+    expect(displayStatus(inv({ type: "CREDIT_NOTE" }), today)).toBe("sent");
   });
 });

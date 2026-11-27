@@ -20,8 +20,9 @@ import { displayStatus, statusTone, typeFromSlug, type SalesTypeSlug } from "@/f
 
 export const metadata: Metadata = { title: "Sales" };
 
-const FILTERS: Record<"invoice" | "other", ListStatusFilter[]> = {
+const FILTERS: Record<"invoice" | "credit" | "other", ListStatusFilter[]> = {
   invoice: ["", "draft", "unpaid", "due", "paid"],
+  credit: ["", "draft", "sent"],
   other: ["", "draft", "sent", "converted"],
 };
 
@@ -37,7 +38,8 @@ export default async function SalesListPage({
   if (!type) notFound();
   const { ctx } = await requireOrgPage();
   const sp = await searchParams;
-  const filters = FILTERS[type === "INVOICE" ? "invoice" : "other"];
+  const filters = FILTERS[type === "INVOICE" ? "invoice" : type === "CREDIT_NOTE" ? "credit" : "other"];
+  const isCredit = type === "CREDIT_NOTE";
   const statusParam = param(sp, "status") as ListStatusFilter;
   const status = filters.includes(statusParam) ? statusParam : "";
   const pageNum = Number.parseInt(param(sp, "page"), 10);
@@ -64,7 +66,7 @@ export default async function SalesListPage({
       <PageHeader
         title={t(`types.${slug}.plural`)}
         subtitle={t(`types.${slug}.subtitle`)}
-        action={canWrite ? <ButtonLink href={`${base}/new`} size="lg">+ {t(`types.${slug}.new`)}</ButtonLink> : null}
+        action={canWrite && !isCredit ? <ButtonLink href={`${base}/new`} size="lg">+ {t(`types.${slug}.new`)}</ButtonLink> : null}
       />
       {done === "deleted" ? <Alert tone="success" className="mb-4">{t("done.deleted")}</Alert> : null}
 
@@ -120,7 +122,17 @@ export default async function SalesListPage({
           <EmptyState
             title={t(`types.${slug}.emptyTitle`)}
             body={t(`types.${slug}.emptyBody`)}
-            action={canWrite ? <ButtonLink href={`${base}/new`} size="lg">+ {t(`types.${slug}.new`)}</ButtonLink> : null}
+            action={
+              canWrite ? (
+                isCredit ? (
+                  <ButtonLink href="/app/sales/invoices" size="lg" variant="secondary">
+                    {t("credit.goToInvoices")}
+                  </ButtonLink>
+                ) : (
+                  <ButtonLink href={`${base}/new`} size="lg">+ {t(`types.${slug}.new`)}</ButtonLink>
+                )
+              ) : null
+            }
           />
         )
       ) : (
@@ -128,7 +140,7 @@ export default async function SalesListPage({
           {result.items.map((d) => {
             const st = displayStatus({ ...d, converted: !!d.convertedTo }, today);
             const client = locale === "ar" && d.client.nameAr ? d.client.nameAr : d.client.nameEn;
-            const balance = d.total - d.paidAmount;
+            const balance = d.balance;
             return (
               <li key={d.id}>
                 <Link href={`${base}/${d.id}`} className="flex min-h-16 flex-col gap-1 px-4 py-3 hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
@@ -146,7 +158,7 @@ export default async function SalesListPage({
                   <div className="flex shrink-0 items-center gap-3">
                     <div className="text-end">
                       <p className="font-semibold tabular-nums text-slate-900">{formatSar(d.total, locale)}</p>
-                      {type === "INVOICE" && d.status === "SENT" && balance > 0 && d.paidAmount > 0 ? (
+                      {type === "INVOICE" && d.status === "SENT" && balance > 0 && balance < d.total ? (
                         <p className="text-xs tabular-nums text-slate-500">{t("balanceShort", { amount: formatSar(balance, locale) })}</p>
                       ) : null}
                     </div>

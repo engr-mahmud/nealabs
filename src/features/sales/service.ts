@@ -7,7 +7,7 @@ import { writeAudit } from "@/features/audit/log";
 import { assertCan, type OrgContext } from "@/features/organizations/context";
 import { todayInRiyadh } from "@/features/master-data/expiry";
 import type { PaymentInput, SalesDocInput } from "./schemas";
-import { conversionTargets } from "./status";
+import { conversionTargets, isTaxDocument } from "./status";
 import { computeTotals } from "./totals";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -85,10 +85,11 @@ async function sellerSnapshot(organizationId: string): Promise<SellerSnapshot> {
 }
 
 /** Loads the client (and site) for a document; both must be active and the site must belong to the client. */
-async function loadParties(tx: TxClient, clientId: string, siteId: string | null) {
-  const client = await tx.client.findFirst({ where: { id: clientId, archivedAt: null } });
+async function loadParties(tx: TxClient, clientId: string, siteId: string | null, allowArchived = false) {
+  // A credit note corrects an existing invoice, so it may go to a client archived since then.
+  const client = await tx.client.findFirst({ where: { id: clientId, ...(allowArchived ? {} : { archivedAt: null }) } });
   if (!client) throw new FieldError("clientId", "chooseClient");
-  if (siteId) {
+  if (siteId && !allowArchived) {
     const site = await tx.site.findFirst({ where: { id: siteId, clientId, archivedAt: null }, select: { id: true } });
     if (!site) throw new FieldError("siteId", "chooseSite");
   }
@@ -128,25 +129,27 @@ function amounts(input: Pick<SalesDocInput, "lines" | "discountType" | "discount
       taxableAmount: totals.taxableAmount,
       vatAmount: totals.vatAmount,
       total: totals.total,
+      // Nothing is paid or credited while a document can still be edited.
+      balance: totals.total,
     },
   };
 }
 
 function statusWhere(type: SalesDocType, status: ListStatusFilter, today: Date): Prisma.SalesDocumentWhereInput {
-  const paidLtTotal = { paidAmount: { lt: prisma.salesDocument.fields.total } };
+  const open = { balance: { gt: 0 } };
   switch (status) {
     case "draft":
       return { status: "DRAFT" };
     case "sent":
-      return type === "INVOICE" ? { status: "SENT" } : { status: "SENT", convertedTo: { is: null } };
+      return type === "INVOICE" || type === "CREDIT_NOTE" ? { status: "SENT" } : { status: "SENT", convertedTo: { is: null } };
     case "converted":
       return { convertedTo: { isNot: null } };
     case "unpaid":
-      return { status: "SENT", ...paidLtTotal };
+      return { status: "SENT", ...open };
     case "due":
-      return { status: "SENT", dueDate: { lt: today }, ...paidLtTotal };
+      return { status: "SENT", dueDate: { lt: today }, ...open };
     case "paid":
-      return { status: "SENT", paidAmount: { gte: prisma.salesDocument.fields.total } };
+      return { status: "SENT", balance: 0 };
     default:
       return {};
   }
@@ -185,6 +188,8 @@ export async function listSalesDocs(ctx: OrgContext, type: SalesDocType, query: 
         dueDate: true,
         total: true,
         paidAmount: true,
+        creditedAmount: true,
+        balance: true,
         client: { select: { nameEn: true, nameAr: true } },
         site: { select: { name: true } },
         convertedTo: { select: { id: true } },
@@ -200,13 +205,13 @@ export async function receivablesSummary(ctx: OrgContext, now = new Date()) {
   assertCan(ctx, "data.read");
   const today = todayInRiyadh(now);
   const db = tenantDb(ctx.organizationId);
-  const unpaid = { type: "INVOICE" as const, status: "SENT" as const, paidAmount: { lt: prisma.salesDocument.fields.total } };
+  const unpaid = { type: "INVOICE" as const, status: "SENT" as const, balance: { gt: 0 } };
   const [sums, overdue, unpaidCount] = await Promise.all([
-    db.salesDocument.aggregate({ where: unpaid, _sum: { total: true, paidAmount: true } }),
+    db.salesDocument.aggregate({ where: unpaid, _sum: { balance: true } }),
     db.salesDocument.count({ where: { ...unpaid, dueDate: { lt: today } } }),
     db.salesDocument.count({ where: unpaid }),
   ]);
-  return { outstanding: (sums._sum.total ?? 0) - (sums._sum.paidAmount ?? 0), overdueCount: overdue, unpaidCount };
+  return { outstanding: sums._sum.balance ?? 0, overdueCount: overdue, unpaidCount };
 }
 
 export async function getSalesDoc(ctx: OrgContext, id: string) {
@@ -220,6 +225,8 @@ export async function getSalesDoc(ctx: OrgContext, id: string) {
       site: { select: { id: true, name: true } },
       source: { select: { id: true, type: true, number: true } },
       convertedTo: { select: { id: true, type: true, number: true, status: true } },
+      creditedInvoice: { select: { id: true, number: true, issuedAt: true, issueDate: true } },
+      creditNotes: { orderBy: { createdAt: "asc" }, select: { id: true, number: true, status: true, total: true, issueDate: true } },
     },
   });
   if (!doc) throw new NotFoundError();
@@ -231,7 +238,7 @@ export type SalesDocDetail = Awaited<ReturnType<typeof getSalesDoc>>;
 /** Whether the document's content (client, lines, amounts) may still change. */
 export function isEditable(doc: { type: SalesDocType; status: string; convertedTo: unknown }): boolean {
   if (doc.convertedTo) return false;
-  return doc.type !== "INVOICE" || doc.status === "DRAFT";
+  return !isTaxDocument(doc.type) || doc.status === "DRAFT";
 }
 
 export async function createSalesDoc(ctx: OrgContext, type: SalesDocType, input: SalesDocInput, now = new Date()) {
@@ -241,6 +248,7 @@ export async function createSalesDoc(ctx: OrgContext, type: SalesDocType, input:
   return tenantTransaction(ctx.organizationId, async (tx) => {
     const { buyer } = await loadParties(tx, input.clientId, input.siteId);
     const { lines, data } = amounts(input, salesConfig.vatRate);
+    if (type === "CREDIT_NOTE") throw new AppError("cannotConvert"); // use createCreditNote
     const issueDate = type === "INVOICE" ? today : (input.issueDate ?? today);
     const doc = await tx.salesDocument.create({
       data: {
@@ -279,9 +287,16 @@ export async function updateSalesDoc(ctx: OrgContext, id: string, input: SalesDo
     const current = await tx.salesDocument.findFirst({ where: { id }, include: { convertedTo: { select: { id: true } } } });
     if (!current) throw new NotFoundError();
     if (!isEditable(current)) throw new AppError("documentLocked");
-    const { buyer } = await loadParties(tx, input.clientId, input.siteId);
+    const isCredit = current.type === "CREDIT_NOTE";
+    if (isCredit) {
+      // A credit note always belongs to its invoice's client and site.
+      input = { ...input, clientId: current.clientId, siteId: current.siteId };
+      if (!input.reason) throw new FieldError("reason", "required");
+    }
+    const { buyer } = await loadParties(tx, input.clientId, input.siteId, isCredit);
     const { lines, data } = amounts(input, current.vatRate);
-    const issueDate = current.type === "INVOICE" ? current.issueDate : (input.issueDate ?? current.issueDate);
+    if (isCredit) await assertCreditFits(tx, current.creditedInvoiceId!, data.total);
+    const issueDate = isTaxDocument(current.type) ? current.issueDate : (input.issueDate ?? current.issueDate);
     await tx.salesDocumentLine.deleteMany({ where: { documentId: id } });
     const doc = await tx.salesDocument.update({
       where: { id },
@@ -295,6 +310,7 @@ export async function updateSalesDoc(ctx: OrgContext, id: string, input: SalesDo
         buyer: buyer as unknown as Prisma.InputJsonValue,
         notes: input.notes ?? null,
         terms: input.terms ?? null,
+        reason: isCredit ? input.reason : null,
         lines: { create: lines },
       },
     });
@@ -316,7 +332,7 @@ export async function markSalesDocSent(ctx: OrgContext, id: string) {
   await tenantTransaction(ctx.organizationId, async (tx) => {
     const doc = await tx.salesDocument.findFirst({ where: { id }, select: { type: true, status: true, number: true } });
     if (!doc) throw new NotFoundError();
-    if (doc.type === "INVOICE") throw new AppError("documentLocked");
+    if (isTaxDocument(doc.type)) throw new AppError("documentLocked");
     if (doc.status === "SENT") return;
     await tx.salesDocument.update({ where: { id }, data: { status: "SENT" } });
     await writeAudit(tx, { organizationId: ctx.organizationId, userId: ctx.userId, action: "sales.sent", entityType: "SalesDocument", entityId: id, metadata: { number: doc.number } });
@@ -324,10 +340,12 @@ export async function markSalesDocSent(ctx: OrgContext, id: string) {
 }
 
 /**
- * Issues a draft tax invoice: gives it the next invoice number, today's date and the
- * exact issue time, freezes seller and buyer details, and locks it against edits.
+ * Issues a draft tax invoice or credit note: gives it the next number of its series,
+ * today's date and the exact issue time, freezes seller and buyer details, and locks
+ * it against edits. A credit note also reduces its invoice's balance, never below
+ * what the invoice can still be credited.
  */
-export async function issueInvoice(ctx: OrgContext, id: string, now = new Date()) {
+export async function issueTaxDocument(ctx: OrgContext, id: string, now = new Date()) {
   assertCan(ctx, "data.write");
   const seller = await sellerSnapshot(ctx.organizationId);
   if (!seller.vatNumber) throw new AppError("sellerVatMissing");
@@ -335,10 +353,11 @@ export async function issueInvoice(ctx: OrgContext, id: string, now = new Date()
   return tenantTransaction(ctx.organizationId, async (tx) => {
     const doc = await tx.salesDocument.findFirst({ where: { id } });
     if (!doc) throw new NotFoundError();
-    if (doc.type !== "INVOICE") throw new NotFoundError();
+    if (!isTaxDocument(doc.type)) throw new NotFoundError();
     if (doc.status !== "DRAFT") throw new AppError("alreadyIssued");
-    const { buyer } = await loadParties(tx, doc.clientId, doc.siteId);
-    const number = await nextNumber(tx, ctx.organizationId, "INVOICE");
+    const isCredit = doc.type === "CREDIT_NOTE";
+    const { buyer } = await loadParties(tx, doc.clientId, doc.siteId, isCredit);
+    const number = await nextNumber(tx, ctx.organizationId, doc.type);
     // Conditional update: two clicks at once cannot issue the same draft twice.
     const updated = await tx.salesDocument.updateMany({
       where: { id, status: "DRAFT" },
@@ -347,21 +366,90 @@ export async function issueInvoice(ctx: OrgContext, id: string, now = new Date()
         number,
         issuedAt: now,
         issueDate: today,
-        dueDate: doc.dueDate && doc.dueDate >= today ? doc.dueDate : today,
+        dueDate: isCredit ? null : doc.dueDate && doc.dueDate >= today ? doc.dueDate : today,
         seller: seller as unknown as Prisma.InputJsonValue,
         buyer: buyer as unknown as Prisma.InputJsonValue,
       },
     });
     if (updated.count !== 1) throw new AppError("alreadyIssued");
+    if (isCredit) {
+      // Atomic: parallel credit notes can never credit more than the invoice total.
+      const credited = await tx.$executeRaw`
+        UPDATE "sales_documents"
+        SET "creditedAmount" = "creditedAmount" + ${doc.total},
+            "balance" = GREATEST(0, "total" - "paidAmount" - "creditedAmount" - ${doc.total}),
+            "updatedAt" = now()
+        WHERE "id" = ${doc.creditedInvoiceId} AND "type" = 'INVOICE' AND "status" = 'SENT'
+          AND "creditedAmount" + ${doc.total} <= "total"`;
+      if (credited !== 1) throw new AppError("creditTooLarge");
+    }
     await writeAudit(tx, {
       organizationId: ctx.organizationId,
       userId: ctx.userId,
-      action: "invoice.issued",
+      action: isCredit ? "credit_note.issued" : "invoice.issued",
       entityType: "SalesDocument",
       entityId: id,
-      metadata: { number, total: doc.total, vatAmount: doc.vatAmount },
+      metadata: { number, total: doc.total, vatAmount: doc.vatAmount, ...(isCredit ? { invoiceId: doc.creditedInvoiceId } : {}) },
     });
     return { id, number };
+  });
+}
+
+/** Kept for readability at call sites that only deal with invoices. */
+export const issueInvoice = issueTaxDocument;
+
+/** A credit note (draft or issued) may not take the invoice's credited total above its total. */
+async function assertCreditFits(tx: TxClient, invoiceId: string, creditTotal: number) {
+  const invoice = await tx.salesDocument.findFirst({ where: { id: invoiceId }, select: { total: true, creditedAmount: true } });
+  if (!invoice) throw new NotFoundError();
+  if (creditTotal > invoice.total - invoice.creditedAmount) throw new AppError("creditTooLarge");
+}
+
+/**
+ * Starts a draft credit note for an issued tax invoice (to correct or cancel it, fully
+ * or partly). Client, site and VAT rate come from the invoice; a reason is required.
+ */
+export async function createCreditNote(ctx: OrgContext, invoiceId: string, input: SalesDocInput, now = new Date()) {
+  assertCan(ctx, "data.write");
+  if (!input.reason) throw new FieldError("reason", "required");
+  const today = todayInRiyadh(now);
+  const seller = await sellerSnapshot(ctx.organizationId);
+  return tenantTransaction(ctx.organizationId, async (tx) => {
+    const invoice = await tx.salesDocument.findFirst({ where: { id: invoiceId } });
+    if (!invoice) throw new NotFoundError();
+    if (invoice.type !== "INVOICE" || invoice.status !== "SENT") throw new AppError("creditNeedsIssuedInvoice");
+    const { buyer } = await loadParties(tx, invoice.clientId, invoice.siteId, true);
+    const { lines, data } = amounts(input, invoice.vatRate);
+    await assertCreditFits(tx, invoice.id, data.total);
+    const doc = await tx.salesDocument.create({
+      data: {
+        ...data,
+        organizationId: ctx.organizationId,
+        type: "CREDIT_NOTE",
+        number: null,
+        clientId: invoice.clientId,
+        siteId: invoice.siteId,
+        creditedInvoiceId: invoice.id,
+        reason: input.reason,
+        issueDate: today,
+        dueDate: null,
+        seller: seller as unknown as Prisma.InputJsonValue,
+        buyer: buyer as unknown as Prisma.InputJsonValue,
+        notes: input.notes ?? null,
+        terms: null,
+        createdById: ctx.userId,
+        lines: { create: lines },
+      },
+    });
+    await writeAudit(tx, {
+      organizationId: ctx.organizationId,
+      userId: ctx.userId,
+      action: "sales.created",
+      entityType: "SalesDocument",
+      entityId: doc.id,
+      metadata: { type: "CREDIT_NOTE", invoice: invoice.number, total: doc.total },
+    });
+    return doc;
   });
 }
 
@@ -397,6 +485,7 @@ export async function convertSalesDoc(ctx: OrgContext, id: string, target: Sales
           taxableAmount: source.taxableAmount,
           vatAmount: source.vatAmount,
           total: source.total,
+          balance: source.total,
           notes: source.notes,
           terms: source.terms,
           createdById: ctx.userId,
@@ -453,13 +542,13 @@ export async function deleteDraft(ctx: OrgContext, id: string) {
 export async function addPayment(ctx: OrgContext, documentId: string, input: PaymentInput) {
   assertCan(ctx, "data.write");
   return tenantTransaction(ctx.organizationId, async (tx) => {
-    const doc = await tx.salesDocument.findFirst({ where: { id: documentId }, select: { type: true, status: true, total: true, paidAmount: true, number: true } });
+    const doc = await tx.salesDocument.findFirst({ where: { id: documentId }, select: { type: true, status: true, number: true } });
     if (!doc) throw new NotFoundError();
     if (doc.type !== "INVOICE" || doc.status !== "SENT") throw new AppError("issueBeforePayment");
-    // Conditional increment: never more than the invoice total, even with parallel requests.
+    // Conditional update: never more than the balance due, even with parallel requests.
     const updated = await tx.salesDocument.updateMany({
-      where: { id: documentId, paidAmount: { lte: doc.total - input.amount } },
-      data: { paidAmount: { increment: input.amount } },
+      where: { id: documentId, balance: { gte: input.amount } },
+      data: { paidAmount: { increment: input.amount }, balance: { decrement: input.amount } },
     });
     if (updated.count !== 1) throw new FieldError("amount", "paymentTooLarge");
     const payment = await tx.salesPayment.create({
@@ -493,7 +582,12 @@ export async function deletePayment(ctx: OrgContext, paymentId: string) {
     const payment = await tx.salesPayment.findFirst({ where: { id: paymentId }, include: { document: { select: { number: true } } } });
     if (!payment) throw new NotFoundError();
     await tx.salesPayment.delete({ where: { id: paymentId } });
-    await tx.salesDocument.update({ where: { id: payment.documentId }, data: { paidAmount: { decrement: payment.amount } } });
+    await tx.$executeRaw`
+      UPDATE "sales_documents"
+      SET "paidAmount" = "paidAmount" - ${payment.amount},
+          "balance" = GREATEST(0, "total" - ("paidAmount" - ${payment.amount}) - "creditedAmount"),
+          "updatedAt" = now()
+      WHERE "id" = ${payment.documentId}`;
     await writeAudit(tx, {
       organizationId: ctx.organizationId,
       userId: ctx.userId,
@@ -523,6 +617,6 @@ export async function listClientDocs(ctx: OrgContext, clientId: string) {
     where: { clientId },
     orderBy: { createdAt: "desc" },
     take: 10,
-    select: { id: true, type: true, status: true, number: true, issueDate: true, dueDate: true, total: true, paidAmount: true, convertedTo: { select: { id: true } } },
+    select: { id: true, type: true, status: true, number: true, issueDate: true, dueDate: true, total: true, paidAmount: true, creditedAmount: true, balance: true, convertedTo: { select: { id: true } } },
   });
 }

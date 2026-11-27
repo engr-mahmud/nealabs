@@ -46,18 +46,22 @@ export default async function SalesDocPage({
   const status = displayStatus({ ...doc, converted: !!doc.convertedTo }, today);
   const canWrite = canWriteData(ctx);
   const editable = isEditable(doc);
+  const isCredit = doc.type === "CREDIT_NOTE";
   const issued = doc.type === "INVOICE" && doc.status === "SENT";
-  const balance = doc.total - doc.paidAmount;
+  const taxIssued = (doc.type === "INVOICE" || isCredit) && doc.status === "SENT";
+  const balance = doc.balance;
+  const creditRoom = doc.total - doc.creditedAmount;
   const money = (h: number) => formatSar(h, locale);
   const date = (d: Date | null) => (d ? format.dateTime(d, { dateStyle: "medium", timeZone: "UTC" }) : "—");
   const qr = invoiceQr(doc);
   const qrSvg = qr ? await QRCode.toString(qr, { type: "svg", errorCorrectionLevel: "M", margin: 0 }) : null;
   const clientName = locale === "ar" && doc.buyer.nameAr ? doc.buyer.nameAr : doc.buyer.nameEn;
-  const docName = doc.type === "INVOICE" && issued ? t(`kinds.${invoiceKind(doc.buyer)}`) : t(`types.${slug}.singular`);
+  const docName = issued ? t(`kinds.${invoiceKind(doc.buyer)}`) : t(`types.${slug}.singular`);
 
   const commands: DocCommand[] = [];
   if (canWrite && !doc.convertedTo) {
     if (doc.type === "INVOICE" && doc.status === "DRAFT") commands.push({ command: "issue", label: t("actions.issue"), primary: true });
+    if (isCredit && doc.status === "DRAFT") commands.push({ command: "issue", label: t("actions.issueCredit"), primary: true });
     if (doc.type === "QUOTATION") {
       commands.push({ command: "convert-INVOICE", label: t("actions.toInvoice"), primary: true });
       commands.push({ command: "convert-PROFORMA", label: t("actions.toProforma") });
@@ -89,10 +93,10 @@ export default async function SalesDocPage({
       </div>
 
       {done ? <Alert tone="success">{t(`done.${done}`)}</Alert> : null}
-      {doc.type === "INVOICE" && doc.status === "DRAFT" ? (
+      {(doc.type === "INVOICE" || isCredit) && doc.status === "DRAFT" ? (
         <Alert tone={doc.seller.vatNumber ? "info" : "warning"}>
           {doc.seller.vatNumber ? (
-            t("draftInvoiceNote")
+            t(isCredit ? "credit.draftNote" : "draftInvoiceNote")
           ) : (
             <>
               {t("vatMissingNote")}{" "}
@@ -110,6 +114,21 @@ export default async function SalesDocPage({
             <span className="ltr-nums">{doc.source.number}</span>
           </Link>
         </p>
+      ) : null}
+      {doc.creditedInvoice ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+          <p className="text-slate-600">
+            {t("credit.forInvoiceLabel")}{" "}
+            <Link href={`/app/sales/invoices/${doc.creditedInvoice.id}`} className="font-medium text-brand hover:underline">
+              <span className="ltr-nums">{doc.creditedInvoice.number}</span>
+            </Link>
+          </p>
+          {doc.reason ? (
+            <p className="mt-1 text-slate-900">
+              <span className="text-slate-600">{t("fields.reason")}:</span> {doc.reason}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {doc.convertedTo ? (
         <Alert tone="success">
@@ -145,10 +164,44 @@ export default async function SalesDocPage({
 
       {issued ? (
         <Card>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>{t("credit.title")}</CardTitle>
+            {canWrite && creditRoom > 0 ? (
+              <ButtonLink href={`/app/sales/credit-notes/new?invoiceId=${doc.id}`} variant="secondary" size="sm">
+                + {t("credit.create")}
+              </ButtonLink>
+            ) : null}
+          </div>
+          {doc.creditNotes.length === 0 ? (
+            <p className="text-sm text-slate-600">{t("credit.none")}</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {doc.creditNotes.map((c) => (
+                <li key={c.id}>
+                  <Link href={`/app/sales/credit-notes/${c.id}`} className="flex min-h-12 items-center justify-between gap-2 rounded-lg px-1 hover:bg-slate-50">
+                    <span className="text-sm text-slate-900">
+                      <span className="ltr-nums font-medium">{c.number ?? t("draftNumber")}</span>
+                      <span className="text-slate-500"> · {date(c.issueDate)}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm tabular-nums">-{money(c.total)}</span>
+                      <Badge tone={c.status === "DRAFT" ? "neutral" : "brand"}>{t(`status.${c.status === "DRAFT" ? "draft" : "sent"}`)}</Badge>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      ) : null}
+
+      {issued ? (
+        <Card>
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <CardTitle>{t("payments.title")}</CardTitle>
             <p className="text-sm text-slate-600">
               {t("payments.paidOf", { paid: money(doc.paidAmount), total: money(doc.total) })}
+              {doc.creditedAmount > 0 ? ` · ${t("payments.credited", { amount: money(doc.creditedAmount) })}` : ""}
               {balance > 0 ? (
                 <>
                   {" · "}
@@ -178,7 +231,7 @@ export default async function SalesDocPage({
             <p className="mb-4 text-sm text-slate-600">{t("payments.none")}</p>
           )}
           {canWrite && balance > 0 ? <PaymentForm id={doc.id} balance={halalasToInput(balance)} today={toDateInput(today)} /> : null}
-          {balance === 0 ? <p className="text-sm font-medium text-emerald-700">{t("payments.fullyPaid")}</p> : null}
+          {balance === 0 ? <p className="text-sm font-medium text-emerald-700">{doc.creditedAmount >= doc.total ? t("payments.fullyCredited") : t("payments.fullyPaid")}</p> : null}
         </Card>
       ) : null}
 
@@ -186,15 +239,17 @@ export default async function SalesDocPage({
         <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
             <div>
-              <dt className="text-slate-500">{issued ? t("fields.issuedAt") : t("fields.issueDate")}</dt>
+              <dt className="text-slate-500">{taxIssued ? t("fields.issuedAt") : t("fields.issueDate")}</dt>
               <dd className="font-medium text-slate-900">
-                {issued && doc.issuedAt ? format.dateTime(doc.issuedAt, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }) : date(doc.issueDate)}
+                {taxIssued && doc.issuedAt ? format.dateTime(doc.issuedAt, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }) : date(doc.issueDate)}
               </dd>
             </div>
-            <div>
-              <dt className="text-slate-500">{doc.type === "QUOTATION" ? t("fields.validUntil") : t("fields.dueDate")}</dt>
-              <dd className="font-medium text-slate-900">{date(doc.dueDate)}</dd>
-            </div>
+            {isCredit ? null : (
+              <div>
+                <dt className="text-slate-500">{doc.type === "QUOTATION" ? t("fields.validUntil") : t("fields.dueDate")}</dt>
+                <dd className="font-medium text-slate-900">{date(doc.dueDate)}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-slate-500">{t("fields.buyerVat")}</dt>
               <dd className="font-medium text-slate-900 ltr-nums">{doc.buyer.vatNumber ?? "—"}</dd>

@@ -6,9 +6,9 @@ import { typeSlugs, type SalesTypeSlug } from "../status";
 /** Quotations | Proformas | Invoices switch at the top of the sales pages. */
 export async function SalesTabs({ current }: { current: SalesTypeSlug }) {
   const t = await getTranslations("sales");
-  const slugs = [typeSlugs.QUOTATION, typeSlugs.PROFORMA, typeSlugs.INVOICE];
+  const slugs = [typeSlugs.QUOTATION, typeSlugs.PROFORMA, typeSlugs.INVOICE, typeSlugs.CREDIT_NOTE];
   return (
-    <nav className="mb-5 inline-flex w-full rounded-xl bg-slate-100 p-1 sm:w-auto" aria-label={t("title")}>
+    <nav className="mb-5 flex w-full overflow-x-auto rounded-xl bg-slate-100 p-1 sm:inline-flex sm:w-auto" aria-label={t("title")}>
       {slugs.map((s) => (
         <Link
           key={s}

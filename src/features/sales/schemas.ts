@@ -66,6 +66,8 @@ export const salesDocSchema = z
     discountValue: z.string().trim().max(20).optional(),
     notes: optionalText(2000),
     terms: optionalText(2000),
+    /** Credit notes only: why the invoice is corrected. */
+    reason: optionalText(500),
   })
   .transform((v, ctx) => {
     let discountValue = 0;

@@ -9,7 +9,7 @@ import { createOrganization } from "../src/features/organizations/service";
 import { loadOrgContext } from "../src/features/organizations/context";
 import { createClient } from "../src/features/clients/service";
 import { createSite } from "../src/features/sites/service";
-import { addPayment, convertSalesDoc, createSalesDoc, issueInvoice } from "../src/features/sales/service";
+import { addPayment, convertSalesDoc, createCreditNote, createSalesDoc, issueInvoice, issueTaxDocument } from "../src/features/sales/service";
 import { createWorker } from "../src/features/workforce/service";
 import { todayInRiyadh } from "../src/features/master-data/expiry";
 
@@ -100,8 +100,13 @@ async function main() {
   const invoice = await convertSalesDoc(ctx, quote.id, "INVOICE");
   await issueInvoice(ctx, invoice.id);
   await addPayment(ctx, invoice.id, { amount: 500000, paidOn: inDays(0), method: "BANK_TRANSFER", reference: "TRX-1001" });
+  const credit = await createCreditNote(ctx, invoice.id, {
+    ...doc(gulf.id, jubail.id, [{ description: "Welder – 2 days not worked", descriptionAr: "لحام – يومان دون عمل", quantity: 2000, unitPrice: 17000 }]),
+    reason: "Welder absent 2 days in November",
+  });
+  await issueTaxDocument(ctx, credit.id);
   await createSalesDoc(ctx, "INVOICE", doc(gulf.id, dammam.id, [{ description: "Helpers – November", descriptionAr: "عمال – نوفمبر", quantity: 26000, unitPrice: 8000 }]));
-  console.log("Seeded sales: 2 quotations, 1 issued invoice (part paid), 1 draft invoice.");
+  console.log("Seeded sales: 2 quotations, 1 issued invoice (part paid, with a credit note), 1 draft invoice.");
   console.log("Seeded: owner@demo.test / accountant@demo.test (password demo12345)");
 }
 

@@ -1,17 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma, systemDb, tenantDb } from "@/lib/db";
-import { FieldError, NotFoundError, ReadOnlyError } from "@/lib/errors";
+import { AppError as AppErrorClass, FieldError, NotFoundError, ReadOnlyError } from "@/lib/errors";
 import { updateOrganization } from "@/features/organizations/service";
 import type { OrgContext } from "@/features/organizations/context";
 import type { SalesDocInput } from "@/features/sales/schemas";
 import {
   addPayment,
   convertSalesDoc,
+  createCreditNote,
   createSalesDoc,
   deleteDraft,
   deletePayment,
   getSalesDoc,
   issueInvoice,
+  issueTaxDocument,
   listSalesDocs,
   markSalesDocSent,
   receivablesSummary,
@@ -282,5 +284,99 @@ describe("sales documents: tenant isolation and access", () => {
     const inv = await createSalesDoc(a.ctx, "INVOICE", docInput(a.client.id));
     await expect(tenantDb(a.org.id).salesDocument.update({ where: { id: inv.id }, data: { total: 1 } })).rejects.toThrow();
     await expect(tenantDb(a.org.id).salesDocument.update({ where: { id: inv.id }, data: { status: "SENT" } })).rejects.toThrow(); // no number
+  });
+});
+
+describe("credit notes", () => {
+  beforeEach(resetDb);
+
+  // One line of 1000 SAR + 15% VAT = 1150 SAR.
+  async function issuedInvoice(name = "Alpha") {
+    const o = await setup(name);
+    const draft = await createSalesDoc(o.ctx, "INVOICE", docInput(o.client.id, { lines: [{ description: "Work", descriptionAr: null, quantity: 1000, unitPrice: 100000 }] }));
+    await issueInvoice(o.ctx, draft.id);
+    return { ...o, invoiceId: draft.id };
+  }
+  const credit = (clientId: string, unitPrice: number, reason: string | null = "Two days not worked") =>
+    docInput(clientId, { reason, lines: [{ description: "Correction", descriptionAr: "تصحيح", quantity: 1000, unitPrice }] });
+
+  it("a partial credit note reduces the balance; payments then stop at the new balance", async () => {
+    const { ctx, client, invoiceId } = await issuedInvoice();
+    const cn = await createCreditNote(ctx, invoiceId, credit(client.id, 20000));
+    expect(cn).toMatchObject({ type: "CREDIT_NOTE", status: "DRAFT", number: null, total: 23000, creditedInvoiceId: invoiceId, reason: "Two days not worked" });
+    // A draft does not change the invoice yet.
+    expect((await getSalesDoc(ctx, invoiceId)).balance).toBe(115000);
+
+    const now = new Date("2026-11-27T10:00:00Z");
+    expect((await issueTaxDocument(ctx, cn.id, now)).number).toBe("CN-00001");
+    const inv = await getSalesDoc(ctx, invoiceId);
+    expect(inv).toMatchObject({ creditedAmount: 23000, balance: 92000 });
+    expect(inv.creditNotes.map((c) => c.number)).toEqual(["CN-00001"]);
+
+    await expect(addPayment(ctx, invoiceId, { amount: 92001, paidOn: now, method: "CASH" })).rejects.toMatchObject({ code: "paymentTooLarge" });
+    await addPayment(ctx, invoiceId, { amount: 92000, paidOn: now, method: "CASH" });
+    expect((await getSalesDoc(ctx, invoiceId)).balance).toBe(0);
+    expect((await listSalesDocs(ctx, "INVOICE", { ...q, status: "paid" })).total).toBe(1);
+
+    // The issued credit note is locked and has its own QR.
+    const doc = await getSalesDoc(ctx, cn.id);
+    await expect(updateSalesDoc(ctx, cn.id, credit(client.id, 1))).rejects.toMatchObject({ code: "documentLocked" });
+    await expect(deleteDraft(ctx, cn.id)).rejects.toMatchObject({ code: "documentLocked" });
+    expect(decodeZatcaQr(invoiceQr(doc)!)).toMatchObject({ 3: "2026-11-27T10:00:00Z", 4: "230.00", 5: "30.00" });
+    expect(doc.creditedInvoice?.id).toBe(invoiceId);
+  });
+
+  it("can never credit more than the invoice total", async () => {
+    const { ctx, client, invoiceId } = await issuedInvoice();
+    await expect(createCreditNote(ctx, invoiceId, credit(client.id, 100001))).rejects.toMatchObject({ code: "creditTooLarge" });
+    const a = await createCreditNote(ctx, invoiceId, credit(client.id, 60000));
+    const b = await createCreditNote(ctx, invoiceId, credit(client.id, 60000));
+    // Both drafts fit alone; issued in parallel only one may pass.
+    const results = await Promise.allSettled([issueTaxDocument(ctx, a.id), issueTaxDocument(ctx, b.id)]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect((await getSalesDoc(ctx, invoiceId)).creditedAmount).toBe(69000);
+    // The refused draft stays a draft with no number used up.
+    expect((await tenantDb(ctx.organizationId).salesDocument.count({ where: { type: "CREDIT_NOTE", status: "SENT" } }))).toBe(1);
+  });
+
+  it("a full credit note marks the invoice as credited", async () => {
+    const { ctx, client, invoiceId } = await issuedInvoice();
+    const cn = await createCreditNote(ctx, invoiceId, credit(client.id, 100000, "Invoice issued by mistake"));
+    await issueTaxDocument(ctx, cn.id);
+    const inv = await getSalesDoc(ctx, invoiceId);
+    expect(inv).toMatchObject({ creditedAmount: 115000, balance: 0 });
+    expect(await receivablesSummary(ctx)).toMatchObject({ outstanding: 0, unpaidCount: 0 });
+  });
+
+  it("needs a reason and an issued invoice", async () => {
+    const { ctx, client, invoiceId } = await issuedInvoice();
+    await expect(createCreditNote(ctx, invoiceId, credit(client.id, 100, null))).rejects.toMatchObject({ field: "reason" });
+    const draft = await createSalesDoc(ctx, "INVOICE", docInput(client.id));
+    const quote = await createSalesDoc(ctx, "QUOTATION", docInput(client.id));
+    for (const id of [draft.id, quote.id]) {
+      await expect(createCreditNote(ctx, id, credit(client.id, 100))).rejects.toMatchObject({ code: "creditNeedsIssuedInvoice" });
+    }
+    await expect(createSalesDoc(ctx, "CREDIT_NOTE", credit(client.id, 100))).rejects.toBeInstanceOf(AppErrorClass);
+  });
+
+  it("a draft credit note keeps the invoice's client even if the form sends another one", async () => {
+    const { ctx, client, invoiceId } = await issuedInvoice();
+    const { createClient } = await import("@/features/clients/service");
+    const other = await createClient(ctx, { nameEn: "Other", nameAr: null, vatNumber: null, crNumber: null, contactName: null, phone: null, email: null, addressLine: null, city: null, postalCode: null, notes: null });
+    const cn = await createCreditNote(ctx, invoiceId, credit(client.id, 100));
+    const updated = await updateSalesDoc(ctx, cn.id, credit(other.id, 200));
+    expect(updated).toMatchObject({ clientId: client.id, total: 230 });
+  });
+
+  it("other companies cannot credit an invoice", async () => {
+    const a = await issuedInvoice("Alpha");
+    const b = await setup("Beta");
+    await expect(createCreditNote(b.ctx, a.invoiceId, credit(b.client.id, 100))).rejects.toBeInstanceOf(NotFoundError);
+    const cn = await createCreditNote(a.ctx, a.invoiceId, credit(a.client.id, 100));
+    await expect(issueTaxDocument(b.ctx, cn.id)).rejects.toBeInstanceOf(NotFoundError);
+    // The database refuses a credit note pointing at another company's invoice.
+    await expect(
+      systemDb().salesDocument.update({ where: { id: cn.id }, data: { organizationId: b.org.id } }),
+    ).rejects.toThrow();
   });
 });

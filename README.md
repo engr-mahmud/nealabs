@@ -18,6 +18,7 @@ English and Arabic (RTL), multi-company, 7-day free trial.
 - Iqama and passport numbers encrypted in the database, masked in lists, full number shown only on request (logged).
 - Sales: quotation → proforma → tax invoice with one-click conversion; line items with decimal quantities, discount (percent or amount), VAT 15%, live totals.
 - Tax invoices are drafts until issued; issuing gives the next number (INV-00001…, no gaps), the exact time and the ZATCA Phase 1 QR code, then locks the invoice.
+- Credit notes to correct or cancel an issued invoice (partly or fully): own CN- series, reason, QR, EN/AR print and PDF; the invoice balance goes down, never below zero credit room.
 - Payments on issued invoices (partial or full, never more than the balance); status draft / sent / partly paid / paid / overdue; "to collect" totals on the invoice list and dashboard.
 - Print view and server-side PDF in English or Arabic (RTL) with bilingual labels, company logo, bank details and QR.
 - Iqama/passport expiry: badges in the list, "expiring in 30 days" filter, dashboard card, daily reminder email (30, 14, 7, 1 days before and on the day).

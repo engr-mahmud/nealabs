@@ -2,13 +2,16 @@
  * What the user sees as the status. Only DRAFT/SENT is stored; payment state comes
  * from the amounts and the due date, so it can never get out of sync.
  */
-export type DisplayStatus = "draft" | "sent" | "converted" | "partial" | "paid" | "due";
+export type DisplayStatus = "draft" | "sent" | "converted" | "partial" | "paid" | "due" | "credited";
 
 export interface StatusInput {
-  type: "QUOTATION" | "PROFORMA" | "INVOICE";
+  type: "QUOTATION" | "PROFORMA" | "INVOICE" | "CREDIT_NOTE";
   status: "DRAFT" | "SENT";
   total: number;
   paidAmount: number;
+  creditedAmount: number;
+  /** max(0, total - paid - credited). */
+  balance: number;
   dueDate: Date | null;
   converted: boolean;
 }
@@ -20,9 +23,9 @@ export function displayStatus(doc: StatusInput, today: Date): DisplayStatus {
     return doc.status === "DRAFT" ? "draft" : "sent";
   }
   if (doc.status === "DRAFT") return "draft";
-  if (doc.paidAmount >= doc.total) return "paid";
+  if (doc.balance === 0) return doc.creditedAmount >= doc.total ? "credited" : "paid";
   if (doc.dueDate && doc.dueDate.getTime() < today.getTime()) return "due";
-  if (doc.paidAmount > 0) return "partial";
+  if (doc.paidAmount > 0 || doc.creditedAmount > 0) return "partial";
   return "sent";
 }
 
@@ -33,10 +36,11 @@ export const statusTone: Record<DisplayStatus, "neutral" | "brand" | "warning" |
   partial: "warning",
   paid: "success",
   due: "danger",
+  credited: "neutral",
 };
 
 /** URL slug ↔ document type. */
-export const typeSlugs = { QUOTATION: "quotations", PROFORMA: "proformas", INVOICE: "invoices" } as const;
+export const typeSlugs = { QUOTATION: "quotations", PROFORMA: "proformas", INVOICE: "invoices", CREDIT_NOTE: "credit-notes" } as const;
 export type SalesTypeSlug = (typeof typeSlugs)[keyof typeof typeSlugs];
 export type SalesType = keyof typeof typeSlugs;
 
@@ -50,4 +54,10 @@ export const conversionTargets: Record<SalesType, SalesType[]> = {
   QUOTATION: ["PROFORMA", "INVOICE"],
   PROFORMA: ["INVOICE"],
   INVOICE: [],
+  CREDIT_NOTE: [],
 };
+
+/** Legal tax documents: numbered only when issued, locked afterwards, carry the QR code. */
+export function isTaxDocument(type: SalesType): boolean {
+  return type === "INVOICE" || type === "CREDIT_NOTE";
+}

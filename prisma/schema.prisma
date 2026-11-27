@@ -34,6 +34,7 @@ enum SalesDocType {
   QUOTATION
   PROFORMA
   INVOICE
+  CREDIT_NOTE
 }
 
 /// Stored state only. Payment state (partial, paid, overdue) is derived from amounts and dates.
@@ -367,48 +368,58 @@ model DocumentCounter {
 /// Quotations and proformas are numbered when created; tax invoices only when issued (no gaps).
 /// An issued tax invoice (status SENT) can no longer be edited or deleted.
 model SalesDocument {
-  id             String         @id @default(cuid())
-  organizationId String
-  type           SalesDocType
-  status         SalesDocStatus @default(DRAFT)
+  id                String         @id @default(cuid())
+  organizationId    String
+  type              SalesDocType
+  status            SalesDocStatus @default(DRAFT)
   /// Null for a draft tax invoice.
-  number         String?
-  clientId       String
-  siteId         String?
+  number            String?
+  clientId          String
+  siteId            String?
   /// The quotation or proforma this was converted from. Unique: a document converts once.
-  sourceId       String?        @unique
-  issueDate      DateTime       @db.Date
+  sourceId          String?        @unique
+  /// For a credit note: the issued tax invoice it corrects.
+  creditedInvoiceId String?
+  /// For a credit note: why the invoice is corrected (required on credit notes).
+  reason            String?
+  issueDate         DateTime       @db.Date
   /// Due date for invoices, "valid until" for quotations.
-  dueDate        DateTime?      @db.Date
+  dueDate           DateTime?      @db.Date
   /// Exact moment a tax invoice was issued (used in the ZATCA QR code).
-  issuedAt       DateTime?
+  issuedAt          DateTime?
   /// Seller and buyer details frozen on the document (company or client edits do not change old documents).
-  seller         Json
-  buyer          Json
-  discountType   DiscountType   @default(NONE)
+  seller            Json
+  buyer             Json
+  discountType      DiscountType   @default(NONE)
   /// Basis points for PERCENT (1000 = 10%), halalas for AMOUNT.
-  discountValue  Int            @default(0)
+  discountValue     Int            @default(0)
   /// Basis points (1500 = 15%).
-  vatRate        Int
-  subtotal       Int
-  discountAmount Int
-  taxableAmount  Int
-  vatAmount      Int
-  total          Int
-  paidAmount     Int            @default(0)
-  notes          String?
-  terms          String?
-  createdById    String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  vatRate           Int
+  subtotal          Int
+  discountAmount    Int
+  taxableAmount     Int
+  vatAmount         Int
+  total             Int
+  paidAmount        Int            @default(0)
+  /// Invoices: total of issued credit notes against it.
+  creditedAmount    Int            @default(0)
+  /// max(0, total - paidAmount - creditedAmount); kept by the database check.
+  balance           Int            @default(0)
+  notes             String?
+  terms             String?
+  createdById       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client       Client              @relation(fields: [clientId, organizationId], references: [id, organizationId])
-  site         Site?               @relation(fields: [siteId, organizationId], references: [id, organizationId])
-  source       SalesDocument?      @relation("Conversion", fields: [sourceId], references: [id])
-  convertedTo  SalesDocument?      @relation("Conversion")
-  lines        SalesDocumentLine[]
-  payments     SalesPayment[]
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client          Client              @relation(fields: [clientId, organizationId], references: [id, organizationId])
+  site            Site?               @relation(fields: [siteId, organizationId], references: [id, organizationId])
+  source          SalesDocument?      @relation("Conversion", fields: [sourceId], references: [id])
+  convertedTo     SalesDocument?      @relation("Conversion")
+  creditedInvoice SalesDocument?      @relation("CreditNotes", fields: [creditedInvoiceId, organizationId], references: [id, organizationId])
+  creditNotes     SalesDocument[]     @relation("CreditNotes")
+  lines           SalesDocumentLine[]
+  payments        SalesPayment[]
 
   @@unique([id, organizationId])
   @@unique([organizationId, type, number])
@@ -416,6 +427,7 @@ model SalesDocument {
   @@index([organizationId, type, status, dueDate])
   @@index([clientId])
   @@index([siteId])
+  @@index([creditedInvoiceId])
   @@map("sales_documents")
 }
 

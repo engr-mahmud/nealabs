@@ -7,7 +7,7 @@ import { actionError, formValues, parseForm, type ActionState } from "@/lib/acti
 import { formId } from "@/features/master-data/actions-helpers";
 import { requireOrgAction } from "@/features/organizations/current";
 import { linesSchema, parseLinesJson, paymentSchema, salesDocSchema, type PaymentInput } from "./schemas";
-import { addPayment, convertSalesDoc, createSalesDoc, deleteDraft, deletePayment, issueInvoice, markSalesDocSent, updateSalesDoc } from "./service";
+import { addPayment, convertSalesDoc, createCreditNote, createSalesDoc, deleteDraft, deletePayment, issueTaxDocument, markSalesDocSent, updateSalesDoc } from "./service";
 import { typeFromSlug, typeSlugs, type SalesType } from "./status";
 
 function docPath(type: SalesType, id: string) {
@@ -40,7 +40,9 @@ export async function saveSalesDocAction(_prev: ActionState | null, formData: Fo
   try {
     const ctx = await requireOrgAction();
     const input = { ...data!, lines: lines.lines! };
-    targetId = id ? (await updateSalesDoc(ctx, id, input)).id : (await createSalesDoc(ctx, type, input)).id;
+    if (id) targetId = (await updateSalesDoc(ctx, id, input)).id;
+    else if (type === "CREDIT_NOTE") targetId = (await createCreditNote(ctx, formId(formData, "invoiceId"), input)).id;
+    else targetId = (await createSalesDoc(ctx, type, input)).id;
   } catch (e) {
     return actionError(e, formData);
   }
@@ -61,7 +63,7 @@ export async function salesDocCommandAction(_prev: ActionState | null, formData:
       await markSalesDocSent(ctx, id);
       target = `${docPath(type, id)}?done=sent`;
     } else if (command === "issue") {
-      await issueInvoice(ctx, id);
+      await issueTaxDocument(ctx, id);
       target = `${docPath(type, id)}?done=issued`;
     } else if (command === "convert-PROFORMA" || command === "convert-INVOICE") {
       const to = command === "convert-PROFORMA" ? "PROFORMA" : "INVOICE";

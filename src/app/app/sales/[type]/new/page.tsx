@@ -12,7 +12,9 @@ import { canWriteData } from "@/features/master-data/permissions";
 import { param } from "@/features/master-data/list";
 import { todayInRiyadh } from "@/features/master-data/expiry";
 import { SalesDocForm } from "@/features/sales/components/sales-doc-form";
-import { listClientsWithSites } from "@/features/sales/service";
+import { getSalesDoc, listClientsWithSites } from "@/features/sales/service";
+import { salesDocFormValues } from "@/features/sales/form-values";
+import { NotFoundError } from "@/lib/errors";
 import { typeFromSlug, type SalesTypeSlug } from "@/features/sales/status";
 
 export const metadata: Metadata = { title: "New document" };
@@ -34,8 +36,35 @@ export default async function NewSalesDocPage({
   if (!canWriteData(ctx)) {
     return <Alert tone="warning">{(await getTranslations("errors"))(ctx.access.readOnly ? "readOnly" : "forbidden")}</Alert>;
   }
-  const clients = await listClientsWithSites(ctx);
   const sp = await searchParams;
+  if (type === "CREDIT_NOTE") {
+    const invoice = await getSalesDoc(ctx, param(sp, "invoiceId")).catch((e) => {
+      if (e instanceof NotFoundError) return null;
+      throw e;
+    });
+    if (!invoice || invoice.type !== "INVOICE" || invoice.status !== "SENT") {
+      return (
+        <div className="max-w-4xl">
+          <PageHeader title={t(`types.${slug}.new`)} />
+          <EmptyState title={t("credit.pickInvoiceTitle")} body={t("credit.pickInvoiceBody")} action={<ButtonLink href="/app/sales/invoices?status=unpaid" size="lg">{t("credit.goToInvoices")}</ButtonLink>} />
+        </div>
+      );
+    }
+    // Start from the invoice's lines; the user lowers them to what is being credited.
+    const base = salesDocFormValues(invoice);
+    return (
+      <div className="max-w-4xl">
+        <PageHeader title={t(`types.${slug}.new`)} subtitle={t(`types.${slug}.newSubtitle`)} />
+        <SalesDocForm
+          type={slug}
+          clients={[]}
+          values={{ ...base, notes: "", terms: "", reason: "", issueDate: "", dueDate: "" }}
+          credit={{ invoiceId: invoice.id, invoiceNumber: invoice.number ?? "", clientName: invoice.buyer.nameEn, maxTotal: invoice.total - invoice.creditedAmount }}
+        />
+      </div>
+    );
+  }
+  const clients = await listClientsWithSites(ctx);
   const preselected = param(sp, "clientId");
   const today = todayInRiyadh();
   const days = type === "QUOTATION" ? salesConfig.defaultValidDays : salesConfig.defaultDueDays;
@@ -58,6 +87,7 @@ export default async function NewSalesDocPage({
             discountValue: "",
             notes: "",
             terms: "",
+            reason: "",
             lines: [],
           }}
         />

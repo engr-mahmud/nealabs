@@ -154,7 +154,9 @@
     "cannotConvert": "This document cannot be converted that way.",
     "sellerVatMissing": "Add your company's VAT number in Company settings before issuing a tax invoice.",
     "issueBeforePayment": "Issue the invoice first, then record payments.",
-    "qrValueTooLong": "Your company name is too long for the invoice QR code. Shorten the name in Company settings."
+    "qrValueTooLong": "Your company name is too long for the invoice QR code. Shorten the name in Company settings.",
+    "creditTooLarge": "This credit note is more than what is left to credit on the invoice. Lower the amounts.",
+    "creditNeedsIssuedInvoice": "A credit note can only be made for an issued tax invoice."
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
@@ -586,6 +588,16 @@
         "emptyTitle": "No invoices yet",
         "emptyBody": "Create your first tax invoice. It takes less than a minute.",
         "draftName": "draft invoice"
+      },
+      "credit-notes": {
+        "singular": "Credit note",
+        "plural": "Credit notes",
+        "subtitle": "Correct or cancel an issued tax invoice. The invoice itself never changes.",
+        "new": "New credit note",
+        "newSubtitle": "Lower the items to what you are crediting, add the reason, save, then issue.",
+        "emptyTitle": "No credit notes yet",
+        "emptyBody": "To correct an issued invoice, open it and choose \"Create credit note\".",
+        "draftName": "draft credit note"
       }
     },
     "kinds": {
@@ -598,7 +610,8 @@
       "converted": "Converted",
       "partial": "Partly paid",
       "paid": "Paid",
-      "due": "Overdue"
+      "due": "Overdue",
+      "credited": "Credited"
     },
     "filters": {
       "all": "All",
@@ -632,7 +645,8 @@
       "discountAmount": "Discount (SAR)",
       "notes": "Notes",
       "terms": "Terms and conditions",
-      "buyerVat": "Client VAT number"
+      "buyerVat": "Client VAT number",
+      "reason": "Reason"
     },
     "discount": {
       "NONE": "No discount",
@@ -661,7 +675,8 @@
       "create": {
         "quotations": "Save quotation",
         "proformas": "Save proforma",
-        "invoices": "Save draft invoice"
+        "invoices": "Save draft invoice",
+        "credit-notes": "Save draft credit note"
       },
       "noClientsTitle": "Add a client first",
       "noClientsBody": "Every document is issued to a client. Add your client, then come back here.",
@@ -678,12 +693,13 @@
       "printEn": "Print (English)",
       "printAr": "Print (Arabic)",
       "pdfEn": "PDF English",
-      "pdfAr": "PDF Arabic"
+      "pdfAr": "PDF Arabic",
+      "issueCredit": "Issue credit note"
     },
     "done": {
       "saved": "Saved.",
       "sent": "Marked as sent.",
-      "issued": "Invoice issued. It now has its number and QR code.",
+      "issued": "Issued. It now has its number and QR code.",
       "converted": "Converted. Check the details below.",
       "paid": "Payment recorded.",
       "paymentDeleted": "Payment removed.",
@@ -702,7 +718,9 @@
       "add": "Record payment",
       "saving": "Saving…",
       "deleteConfirm": "Remove this payment?",
-      "fullyPaid": "Fully paid."
+      "fullyPaid": "Fully paid.",
+      "credited": "credited {amount}",
+      "fullyCredited": "Fully credited."
     },
     "methods": {
       "BANK_TRANSFER": "Bank transfer",
@@ -710,6 +728,21 @@
       "CHEQUE": "Cheque",
       "CARD": "Card",
       "OTHER": "Other"
+    },
+    "credit": {
+      "title": "Credit notes",
+      "create": "Create credit note",
+      "none": "No credit notes. Use one to correct or cancel this invoice.",
+      "forInvoice": "Credit note for invoice {number}",
+      "forInvoiceLabel": "Credit note for invoice",
+      "maxCredit": "up to {amount} can be credited",
+      "reasonPlaceholder": "For example: 2 days not worked, wrong price",
+      "hint": "The items below are copied from the invoice. Lower or remove them so the total is what you are crediting.",
+      "tooLarge": "The total is more than the {amount} that can still be credited.",
+      "draftNote": "This credit note is a draft. Issue it to give it a number and the QR code; the invoice balance goes down then. After that it cannot be changed.",
+      "pickInvoiceTitle": "Start from an invoice",
+      "pickInvoiceBody": "A credit note always corrects an issued tax invoice. Open the invoice and choose \"Create credit note\".",
+      "goToInvoices": "Go to invoices"
     }
   }
 }

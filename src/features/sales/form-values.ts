@@ -14,6 +14,7 @@ export function salesDocFormValues(doc: SalesDocDetail): SalesDocValues {
     discountValue: doc.discountType === "PERCENT" ? formatPercent(doc.discountValue) : doc.discountType === "AMOUNT" ? halalasToInput(doc.discountValue) : "",
     notes: doc.notes ?? "",
     terms: doc.terms ?? "",
+    reason: doc.reason ?? "",
     lines: doc.lines.map((l) => ({
       description: l.description,
       descriptionAr: l.descriptionAr ?? "",

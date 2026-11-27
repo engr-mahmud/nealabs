@@ -22,6 +22,12 @@ const LABELS = {
   taxInvoice: ["Tax Invoice", "فاتورة ضريبية"],
   simplifiedTaxInvoice: ["Simplified Tax Invoice", "فاتورة ضريبية مبسطة"],
   draftInvoice: ["Draft – not a tax invoice", "مسودة – ليست فاتورة ضريبية"],
+  creditNote: ["Credit Note", "إشعار دائن"],
+  draftCredit: ["Draft – not a credit note", "مسودة – ليست إشعاراً دائناً"],
+  originalInvoice: ["Original invoice", "الفاتورة الأصلية"],
+  invoiceDate: ["Invoice date", "تاريخ الفاتورة"],
+  reason: ["Reason", "السبب"],
+  credited: ["Credit notes", "الإشعارات الدائنة"],
   number: ["No.", "الرقم"],
   date: ["Date", "التاريخ"],
   issuedAt: ["Issue date and time", "تاريخ ووقت الإصدار"],
@@ -130,9 +136,19 @@ export async function renderSalesDocHtml(doc: SalesDocDetail, opts: RenderOption
   const seller = doc.seller;
   const buyer = doc.buyer;
   const isInvoice = doc.type === "INVOICE";
-  const issued = isInvoice && doc.status === "SENT";
+  const isCredit = doc.type === "CREDIT_NOTE";
+  const isTax = isInvoice || isCredit;
+  const issued = isTax && doc.status === "SENT";
   const titleKey: LabelKey =
-    doc.type === "QUOTATION" ? "quotation" : doc.type === "PROFORMA" ? "proforma" : invoiceKind(buyer) === "standard" ? "taxInvoice" : "simplifiedTaxInvoice";
+    doc.type === "QUOTATION"
+      ? "quotation"
+      : doc.type === "PROFORMA"
+        ? "proforma"
+        : isCredit
+          ? "creditNote"
+          : invoiceKind(buyer) === "standard"
+            ? "taxInvoice"
+            : "simplifiedTaxInvoice";
 
   const qrPayload = invoiceQr(doc);
   const qrSvg = qrPayload ? await QRCode.toString(qrPayload, { type: "svg", errorCorrectionLevel: "M", margin: 0 }) : "";
@@ -147,7 +163,11 @@ export async function renderSalesDocHtml(doc: SalesDocDetail, opts: RenderOption
   if (doc.number) meta.push(`<div class="kv"><span class="k">${L("number")}</span><span class="v num">${esc(doc.number)}</span></div>`);
   if (issued && doc.issuedAt) meta.push(`<div class="kv"><span class="k">${L("issuedAt")}</span><span class="v num">${esc(dateTime(doc.issuedAt))}</span></div>`);
   else meta.push(`<div class="kv"><span class="k">${L("date")}</span><span class="v num">${esc(dateOnly(doc.issueDate))}</span></div>`);
-  if (doc.dueDate) meta.push(`<div class="kv"><span class="k">${L(doc.type === "QUOTATION" ? "validUntil" : "dueDate")}</span><span class="v num">${esc(dateOnly(doc.dueDate))}</span></div>`);
+  if (doc.dueDate && !isCredit) meta.push(`<div class="kv"><span class="k">${L(doc.type === "QUOTATION" ? "validUntil" : "dueDate")}</span><span class="v num">${esc(dateOnly(doc.dueDate))}</span></div>`);
+  if (doc.creditedInvoice?.number) {
+    meta.push(`<div class="kv"><span class="k">${L("originalInvoice")}</span><span class="v num">${esc(doc.creditedInvoice.number)}</span></div>`);
+    meta.push(`<div class="kv"><span class="k">${L("invoiceDate")}</span><span class="v num">${esc(doc.creditedInvoice.issuedAt ? dateTime(doc.creditedInvoice.issuedAt) : dateOnly(doc.creditedInvoice.issueDate))}</span></div>`);
+  }
   if (doc.source?.number) meta.push(`<div class="kv"><span class="k">${L("reference")}</span><span class="v num">${esc(doc.source.number)}</span></div>`);
 
   const rows = doc.lines
@@ -171,16 +191,16 @@ export async function renderSalesDocHtml(doc: SalesDocDetail, opts: RenderOption
       : "",
     `<tr><th>${L("vat")} <span class="num">${esc(vatPct)}%</span></th><td class="num">${money(doc.vatAmount)}</td></tr>`,
     `<tr class="grand"><th>${L("total")}</th><td class="num">${money(doc.total)}</td></tr>`,
-    issued && doc.paidAmount > 0
-      ? `<tr><th>${L("paid")}</th><td class="num">${money(doc.paidAmount)}</td></tr><tr class="balance"><th>${L("balance")}</th><td class="num">${money(doc.total - doc.paidAmount)}</td></tr>`
-      : "",
+    isInvoice && issued && doc.creditedAmount > 0 ? `<tr><th>${L("credited")}</th><td class="num">-${money(doc.creditedAmount)}</td></tr>` : "",
+    isInvoice && issued && doc.paidAmount > 0 ? `<tr><th>${L("paid")}</th><td class="num">${money(doc.paidAmount)}</td></tr>` : "",
+    isInvoice && issued && (doc.paidAmount > 0 || doc.creditedAmount > 0) ? `<tr class="balance"><th>${L("balance")}</th><td class="num">${money(doc.balance)}</td></tr>` : "",
   ].join("");
 
   const bank =
-    doc.type !== "QUOTATION" && seller.iban
+    doc.type !== "QUOTATION" && !isCredit && seller.iban
       ? `<div class="box"><h3>${L("bank")}</h3>${seller.bankName ? `<div>${esc(seller.bankName)}</div>` : ""}${seller.bankAccountName ? `<div class="kv"><span class="k">${L("accountName")}</span><span class="v">${esc(seller.bankAccountName)}</span></div>` : ""}<div class="kv"><span class="k">${L("iban")}</span><span class="v num">${esc(seller.iban)}</span></div></div>`
       : "";
-  const notes = [doc.notes ? `<div class="box"><h3>${L("notes")}</h3><p>${esc(doc.notes)}</p></div>` : "", doc.terms ? `<div class="box"><h3>${L("terms")}</h3><p>${esc(doc.terms)}</p></div>` : ""].join("");
+  const notes = [isCredit && doc.reason ? `<div class="box"><h3>${L("reason")}</h3><p>${esc(doc.reason)}</p></div>` : "", doc.notes ? `<div class="box"><h3>${L("notes")}</h3><p>${esc(doc.notes)}</p></div>` : "", doc.terms ? `<div class="box"><h3>${L("terms")}</h3><p>${esc(doc.terms)}</p></div>` : ""].join("");
 
   const toolbar = opts.forPdf
     ? ""
@@ -278,7 +298,7 @@ ${toolbar}
     </div>
     <div class="title">
       <h1>${L(titleKey)}</h1>
-      ${isInvoice && !issued ? `<div class="draft">${esc(LABELS.draftInvoice[lead])}</div>` : ""}
+      ${isTax && !issued ? `<div class="draft">${esc(LABELS[isCredit ? "draftCredit" : "draftInvoice"][lead])}</div>` : ""}
     </div>
   </header>
 

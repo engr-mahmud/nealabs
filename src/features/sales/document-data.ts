@@ -6,9 +6,9 @@ export function qrSellerName(seller: SellerSnapshot): string {
   return seller.nameAr?.trim() || seller.nameEn;
 }
 
-/** ZATCA Phase 1 QR payload for an issued tax invoice, or null for anything else. */
+/** ZATCA Phase 1 QR payload for an issued tax invoice or credit note, or null for anything else. */
 export function invoiceQr(doc: Pick<SalesDocDetail, "type" | "status" | "issuedAt" | "seller" | "total" | "vatAmount">): string | null {
-  if (doc.type !== "INVOICE" || doc.status !== "SENT" || !doc.issuedAt || !doc.seller.vatNumber) return null;
+  if ((doc.type !== "INVOICE" && doc.type !== "CREDIT_NOTE") || doc.status !== "SENT" || !doc.issuedAt || !doc.seller.vatNumber) return null;
   return zatcaQrPayload({ sellerName: qrSellerName(doc.seller), vatNumber: doc.seller.vatNumber, timestamp: doc.issuedAt, total: doc.total, vatAmount: doc.vatAmount });
 }
 

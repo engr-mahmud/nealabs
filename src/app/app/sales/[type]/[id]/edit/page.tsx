@@ -8,7 +8,14 @@ import { canWriteData } from "@/features/master-data/permissions";
 import { SalesDocForm } from "@/features/sales/components/sales-doc-form";
 import { salesDocFormValues } from "@/features/sales/form-values";
 import { getSalesDoc, isEditable, listClientsWithSites } from "@/features/sales/service";
+import type { OrgContext } from "@/features/organizations/context";
+
 import { typeSlugs } from "@/features/sales/status";
+
+async function creditRoom(ctx: OrgContext, invoiceId: string) {
+  const invoice = await getSalesDoc(ctx, invoiceId);
+  return invoice.total - invoice.creditedAmount;
+}
 
 export const metadata: Metadata = { title: "Edit document" };
 
@@ -28,7 +35,17 @@ export default async function EditSalesDocPage({ params }: { params: Promise<{ t
   return (
     <div className="max-w-4xl">
       <PageHeader title={t("editTitle", { name: doc.number ?? t(`types.${slug}.draftName`) })} />
-      <SalesDocForm type={slug} id={doc.id} clients={options} values={salesDocFormValues(doc)} />
+      <SalesDocForm
+        type={slug}
+        id={doc.id}
+        clients={options}
+        values={salesDocFormValues(doc)}
+        credit={
+          doc.type === "CREDIT_NOTE" && doc.creditedInvoice
+            ? { invoiceId: doc.creditedInvoice.id, invoiceNumber: doc.creditedInvoice.number ?? "", clientName: doc.buyer.nameEn, maxTotal: await creditRoom(ctx, doc.creditedInvoice.id) }
+            : undefined
+        }
+      />
     </div>
   );
 }

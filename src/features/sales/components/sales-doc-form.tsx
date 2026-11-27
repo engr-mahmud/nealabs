@@ -32,6 +32,7 @@ export interface SalesDocValues {
   discountValue: string;
   notes: string;
   terms: string;
+  reason: string;
   lines: LineValues[];
 }
 
@@ -47,7 +48,16 @@ const emptyLine: LineValues = { description: "", descriptionAr: "", quantity: "1
 let keySeq = 0;
 const nextKey = () => `l${++keySeq}`;
 
-export function SalesDocForm({ type, id, clients, values }: { type: SalesTypeSlug; id?: string; clients: ClientOption[]; values: SalesDocValues }) {
+/** For a credit note: the invoice it corrects. Client and site then come from the invoice. */
+export interface CreditFor {
+  invoiceId: string;
+  invoiceNumber: string;
+  clientName: string;
+  /** Halalas that can still be credited. */
+  maxTotal: number;
+}
+
+export function SalesDocForm({ type, id, clients, values, credit }: { type: SalesTypeSlug; id?: string; clients: ClientOption[]; values: SalesDocValues; credit?: CreditFor }) {
   const t = useTranslations("sales");
   const tc = useTranslations("common");
   const locale = useLocale();
@@ -75,6 +85,7 @@ export function SalesDocForm({ type, id, clients, values }: { type: SalesTypeSlu
   const update = (key: string, patch: Partial<LineValues>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const linesJson = JSON.stringify(lines.map(({ description, descriptionAr, quantity, unitPrice }) => ({ description, descriptionAr, quantity, unitPrice })));
   const isInvoice = type === "invoices";
+  const overCredit = credit ? totals.total > credit.maxTotal : false;
 
   return (
     <form action={action} className="space-y-4" noValidate>
@@ -83,6 +94,18 @@ export function SalesDocForm({ type, id, clients, values }: { type: SalesTypeSlu
       <input type="hidden" name="lines" value={linesJson} />
       {state?.message ? <Alert tone="error">{state.message}</Alert> : null}
 
+      {credit ? (
+        <Card>
+          <CardTitle className="mb-1">{t("credit.forInvoice", { number: credit.invoiceNumber })}</CardTitle>
+          <p className="mb-4 text-sm text-slate-600">
+            {credit.clientName} · {t("credit.maxCredit", { amount: money(credit.maxTotal) })}
+          </p>
+          <input type="hidden" name="invoiceId" value={credit.invoiceId} />
+          <input type="hidden" name="clientId" value={values.clientId} />
+          <TextareaField label={t("fields.reason")} name="reason" defaultValue={v("reason")} error={e?.reason} required placeholder={t("credit.reasonPlaceholder")} />
+          <p className="mt-2 text-sm text-slate-500">{t("credit.hint")}</p>
+        </Card>
+      ) : (
       <Card>
         <CardTitle className="mb-4">{t("form.client")}</CardTitle>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -114,6 +137,7 @@ export function SalesDocForm({ type, id, clients, values }: { type: SalesTypeSlu
           />
         </div>
       </Card>
+      )}
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -228,6 +252,7 @@ export function SalesDocForm({ type, id, clients, values }: { type: SalesTypeSlu
             {totals.discountAmount > 0 ? <Row label={t("totals.discount")} value={`-${money(totals.discountAmount)}`} /> : null}
             <Row label={t("totals.vat", { rate: formatPercent(salesConfig.vatRate) })} value={money(totals.vatAmount)} />
             <Row label={t("totals.total")} value={money(totals.total)} strong />
+            {overCredit ? <p className="text-sm text-red-700">{t("credit.tooLarge", { amount: money(credit!.maxTotal) })}</p> : null}
           </dl>
         </div>
       </Card>
@@ -241,7 +266,7 @@ export function SalesDocForm({ type, id, clients, values }: { type: SalesTypeSlu
         </summary>
         <div className="grid gap-4 px-5 pb-6 sm:px-6">
           <TextareaField label={t("fields.notes")} name="notes" defaultValue={v("notes")} error={e?.notes} />
-          <TextareaField label={t("fields.terms")} name="terms" defaultValue={v("terms")} error={e?.terms} />
+          {credit ? null : <TextareaField label={t("fields.terms")} name="terms" defaultValue={v("terms")} error={e?.terms} />}
         </div>
       </details>
 
