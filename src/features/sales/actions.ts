@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { actionError, formValues, parseForm, type ActionState } from "@/lib/action";
+import { AppError } from "@/lib/errors";
 import { formId } from "@/features/master-data/actions-helpers";
 import { requireOrgAction } from "@/features/organizations/current";
 import { linesSchema, parseLinesJson, paymentSchema, salesDocSchema, type PaymentInput } from "./schemas";
@@ -96,7 +97,15 @@ export async function addPaymentAction(_prev: ActionState | null, formData: Form
 }
 
 export async function deletePaymentAction(formData: FormData) {
-  const documentId = await deletePayment(await requireOrgAction(), formId(formData));
-  revalidatePath("/app/sales", "layout");
+  let documentId: string;
+  try {
+    documentId = await deletePayment(await requireOrgAction(), formId(formData));
+  } catch (e) {
+    // Expected refusals (e.g. a refund depends on the payment) are shown on the invoice page.
+    const invoiceId = formId(formData, "documentId");
+    if (e instanceof AppError && invoiceId) redirect(`${docPath("INVOICE", invoiceId)}?error=${e.code}`);
+    throw e;
+  }
+  revalidatePath("/app", "layout");
   redirect(`${docPath("INVOICE", documentId)}?done=paymentDeleted`);
 }

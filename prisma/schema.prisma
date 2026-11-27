@@ -49,6 +49,20 @@ enum DiscountType {
   AMOUNT
 }
 
+enum FinanceKind {
+  INCOME
+  EXPENSE
+}
+
+/// Where a finance entry comes from. Only MANUAL entries are edited on the finance pages;
+/// the others follow their source (invoice payment, refund on a credited invoice, approved salary sheet).
+enum FinanceSource {
+  MANUAL
+  INVOICE_PAYMENT
+  INVOICE_REFUND
+  SALARY_SHEET
+}
+
 enum PaymentMethod {
   BANK_TRANSFER
   CASH
@@ -131,19 +145,21 @@ model Organization {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  createdBy    User                @relation("OrganizationCreatedBy", fields: [createdById], references: [id])
-  memberships  Membership[]
-  invitations  Invitation[]
-  subscription Subscription?
-  auditLogs    AuditLog[]
-  logo         OrganizationLogo?
-  clients      Client[]
-  sites        Site[]
-  workers      Worker[]
-  salesDocs    SalesDocument[]
-  salesLines   SalesDocumentLine[]
-  payments     SalesPayment[]
-  docCounters  DocumentCounter[]
+  createdBy         User                @relation("OrganizationCreatedBy", fields: [createdById], references: [id])
+  memberships       Membership[]
+  invitations       Invitation[]
+  subscription      Subscription?
+  auditLogs         AuditLog[]
+  logo              OrganizationLogo?
+  clients           Client[]
+  sites             Site[]
+  workers           Worker[]
+  salesDocs         SalesDocument[]
+  salesLines        SalesDocumentLine[]
+  payments          SalesPayment[]
+  docCounters       DocumentCounter[]
+  financeCategories FinanceCategory[]
+  financeEntries    FinanceEntry[]
 
   @@map("organizations")
 }
@@ -281,9 +297,10 @@ model Client {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  sites        Site[]
-  salesDocs    SalesDocument[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sites          Site[]
+  salesDocs      SalesDocument[]
+  financeEntries FinanceEntry[]
 
   @@unique([id, organizationId])
   @@index([organizationId, archivedAt])
@@ -303,10 +320,11 @@ model Site {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client       Client          @relation(fields: [clientId, organizationId], references: [id, organizationId])
-  workers      Worker[]
-  salesDocs    SalesDocument[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client         Client          @relation(fields: [clientId, organizationId], references: [id, organizationId])
+  workers        Worker[]
+  salesDocs      SalesDocument[]
+  financeEntries FinanceEntry[]
 
   @@unique([id, organizationId])
   @@index([organizationId, archivedAt])
@@ -420,6 +438,7 @@ model SalesDocument {
   creditNotes     SalesDocument[]     @relation("CreditNotes")
   lines           SalesDocumentLine[]
   payments        SalesPayment[]
+  financeEntries  FinanceEntry[]
 
   @@unique([id, organizationId])
   @@unique([organizationId, type, number])
@@ -469,8 +488,83 @@ model SalesPayment {
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   document     SalesDocument @relation(fields: [documentId, organizationId], references: [id, organizationId])
+  financeEntry FinanceEntry?
 
+  @@unique([id, organizationId])
   @@index([documentId])
   @@index([organizationId, paidOn])
   @@map("sales_payments")
+}
+
+/// RLS. Income or expense category. Each company gets a default list (EN/AR) and can add its own.
+/// systemKey marks the defaults the app itself uses (invoice payments, salaries); they cannot be archived.
+model FinanceCategory {
+  id             String      @id @default(cuid())
+  organizationId String
+  kind           FinanceKind
+  nameEn         String
+  nameAr         String?
+  systemKey      String?
+  archivedAt     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entries      FinanceEntry[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, kind, systemKey])
+  @@index([organizationId, kind, archivedAt])
+  @@map("finance_categories")
+}
+
+/// RLS. One income or expense (cash basis: the day money came in or went out).
+/// amount includes VAT; vatAmount is the VAT part of it, so profit can be shown without VAT.
+/// Entries are never deleted from the finance pages: a wrong manual entry is voided (kept for the audit trail).
+/// An invoice payment's income entry belongs to the payment and goes away with it.
+model FinanceEntry {
+  id              String         @id @default(cuid())
+  organizationId  String
+  kind            FinanceKind
+  source          FinanceSource  @default(MANUAL)
+  categoryId      String
+  date            DateTime       @db.Date
+  /// Halalas, including VAT. Positive; kind says the direction. Only refunds (INVOICE_REFUND)
+  /// are negative income, so sums and reports net them automatically.
+  amount          Int
+  /// Halalas, the VAT part of amount (0 when no VAT).
+  vatAmount       Int            @default(0)
+  description     String?
+  reference       String?
+  method          PaymentMethod?
+  clientId        String?
+  siteId          String?
+  /// Set for source INVOICE_PAYMENT (one entry per payment).
+  salesPaymentId  String?
+  /// Set for source INVOICE_REFUND: the invoice whose money was paid back to the client.
+  salesDocumentId String?
+  /// Set for source SALARY_SHEET (one entry per sheet and site). Foreign key added with the salary sheet table (step 5).
+  salarySheetId   String?
+  voidedAt        DateTime?
+  voidedById      String?
+  voidReason      String?
+  createdById     String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category      FinanceCategory @relation(fields: [categoryId, organizationId], references: [id, organizationId])
+  client        Client?         @relation(fields: [clientId, organizationId], references: [id, organizationId])
+  site          Site?           @relation(fields: [siteId, organizationId], references: [id, organizationId])
+  salesPayment  SalesPayment?   @relation(fields: [salesPaymentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  salesDocument SalesDocument?  @relation(fields: [salesDocumentId, organizationId], references: [id, organizationId])
+
+  @@unique([salesPaymentId, organizationId])
+  @@index([organizationId, date])
+  @@index([organizationId, kind, date])
+  @@index([organizationId, siteId, date])
+  @@index([organizationId, salarySheetId])
+  @@index([salesDocumentId])
+  @@index([categoryId])
+  @@map("finance_entries")
 }

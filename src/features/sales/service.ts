@@ -6,6 +6,7 @@ import { AppError, FieldError, NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/features/audit/log";
 import { assertCan, type OrgContext } from "@/features/organizations/context";
 import { todayInRiyadh } from "@/features/master-data/expiry";
+import { assertRefundsCovered, recordInvoicePaymentIncome } from "@/features/finance/service";
 import type { PaymentInput, SalesDocInput } from "./schemas";
 import { conversionTargets, isTaxDocument } from "./status";
 import { computeTotals } from "./totals";
@@ -542,7 +543,10 @@ export async function deleteDraft(ctx: OrgContext, id: string) {
 export async function addPayment(ctx: OrgContext, documentId: string, input: PaymentInput) {
   assertCan(ctx, "data.write");
   return tenantTransaction(ctx.organizationId, async (tx) => {
-    const doc = await tx.salesDocument.findFirst({ where: { id: documentId }, select: { type: true, status: true, number: true } });
+    const doc = await tx.salesDocument.findFirst({
+      where: { id: documentId },
+      select: { type: true, status: true, total: true, vatAmount: true, paidAmount: true, number: true, clientId: true, siteId: true },
+    });
     if (!doc) throw new NotFoundError();
     if (doc.type !== "INVOICE" || doc.status !== "SENT") throw new AppError("issueBeforePayment");
     // Conditional update: never more than the balance due, even with parallel requests.
@@ -551,6 +555,8 @@ export async function addPayment(ctx: OrgContext, documentId: string, input: Pay
       data: { paidAmount: { increment: input.amount }, balance: { decrement: input.amount } },
     });
     if (updated.count !== 1) throw new FieldError("amount", "paymentTooLarge");
+    // The row is locked by this transaction now, so this is the exact amount paid before this payment.
+    const { paidAmount: paidAfter } = await tx.salesDocument.findUniqueOrThrow({ where: { id: documentId }, select: { paidAmount: true } });
     const payment = await tx.salesPayment.create({
       data: {
         organizationId: ctx.organizationId,
@@ -571,6 +577,14 @@ export async function addPayment(ctx: OrgContext, documentId: string, input: Pay
       entityId: payment.id,
       metadata: { invoice: doc.number, amount: input.amount, method: input.method },
     });
+    // Every payment received is income (cash basis); removing the payment removes it too.
+    await recordInvoicePaymentIncome(tx, {
+      organizationId: ctx.organizationId,
+      userId: ctx.userId,
+      payment,
+      invoice: doc,
+      paidBefore: paidAfter - input.amount,
+    });
     return payment;
   });
 }
@@ -581,6 +595,7 @@ export async function deletePayment(ctx: OrgContext, paymentId: string) {
   return tenantTransaction(ctx.organizationId, async (tx) => {
     const payment = await tx.salesPayment.findFirst({ where: { id: paymentId }, include: { document: { select: { number: true } } } });
     if (!payment) throw new NotFoundError();
+    // Its income entry is removed with it (foreign key ON DELETE CASCADE).
     await tx.salesPayment.delete({ where: { id: paymentId } });
     await tx.$executeRaw`
       UPDATE "sales_documents"
@@ -588,6 +603,7 @@ export async function deletePayment(ctx: OrgContext, paymentId: string) {
           "balance" = GREATEST(0, "total" - ("paidAmount" - ${payment.amount}) - "creditedAmount"),
           "updatedAt" = now()
       WHERE "id" = ${payment.documentId}`;
+    await assertRefundsCovered(tx, payment.documentId);
     await writeAudit(tx, {
       organizationId: ctx.organizationId,
       userId: ctx.userId,

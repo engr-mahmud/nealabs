@@ -18,6 +18,8 @@ import { todayInRiyadh } from "@/features/master-data/expiry";
 import { deletePaymentAction } from "@/features/sales/actions";
 import { DocActions, PaymentForm, type DocCommand } from "@/features/sales/components/doc-actions";
 import { invoiceKind, invoiceQr } from "@/features/sales/document-data";
+import { RefundForm } from "@/features/finance/components/refund-form";
+import { invoiceRefundInfo } from "@/features/finance/service";
 import { getSalesDoc, isEditable } from "@/features/sales/service";
 import { displayStatus, statusTone, typeSlugs } from "@/features/sales/status";
 import { formatPercent, formatQuantity } from "@/features/sales/totals";
@@ -41,7 +43,10 @@ export default async function SalesDocPage({
   if (slugParam !== slug) redirect(`/app/sales/${slug}/${id}`);
 
   const [t, tc, locale, format] = await Promise.all([getTranslations("sales"), getTranslations("common"), getLocale(), getFormatter()]);
-  const done = param(await searchParams, "done");
+  const sp = await searchParams;
+  const done = param(sp, "done");
+  const errorCode = param(sp, "error");
+  const te = await getTranslations("errors");
   const today = todayInRiyadh();
   const status = displayStatus({ ...doc, converted: !!doc.convertedTo }, today);
   const canWrite = canWriteData(ctx);
@@ -50,6 +55,7 @@ export default async function SalesDocPage({
   const issued = doc.type === "INVOICE" && doc.status === "SENT";
   const taxIssued = (doc.type === "INVOICE" || isCredit) && doc.status === "SENT";
   const balance = doc.balance;
+  const [tf, refund] = await Promise.all([getTranslations("finance"), issued ? invoiceRefundInfo(ctx, doc.id) : Promise.resolve(null)]);
   const creditRoom = doc.total - doc.creditedAmount;
   const money = (h: number) => formatSar(h, locale);
   const date = (d: Date | null) => (d ? format.dateTime(d, { dateStyle: "medium", timeZone: "UTC" }) : "—");
@@ -92,7 +98,8 @@ export default async function SalesDocPage({
         <p className="text-2xl font-semibold tabular-nums text-slate-900 sm:text-end">{money(doc.total)}</p>
       </div>
 
-      {done ? <Alert tone="success">{t(`done.${done}`)}</Alert> : null}
+      {done && t.has(`done.${done}`) ? <Alert tone="success">{t(`done.${done}`)}</Alert> : null}
+      {errorCode && te.has(errorCode) ? <Alert tone="error">{te(errorCode)}</Alert> : null}
       {(doc.type === "INVOICE" || isCredit) && doc.status === "DRAFT" ? (
         <Alert tone={doc.seller.vatNumber ? "info" : "warning"}>
           {doc.seller.vatNumber ? (
@@ -221,6 +228,7 @@ export default async function SalesDocPage({
                   {canWrite ? (
                     <form action={deletePaymentAction}>
                       <input type="hidden" name="id" value={p.id} />
+                      <input type="hidden" name="documentId" value={doc.id} />
                       <ConfirmSubmit label={tc("remove")} confirmText={t("payments.deleteConfirm")} confirmLabel={tc("remove")} cancelLabel={tc("cancel")} />
                     </form>
                   ) : null}
@@ -232,6 +240,41 @@ export default async function SalesDocPage({
           )}
           {canWrite && balance > 0 ? <PaymentForm id={doc.id} balance={halalasToInput(balance)} today={toDateInput(today)} /> : null}
           {balance === 0 ? <p className="text-sm font-medium text-emerald-700">{doc.creditedAmount >= doc.total ? t("payments.fullyCredited") : t("payments.fullyPaid")}</p> : null}
+        </Card>
+      ) : null}
+
+      {refund && (refund.due > 0 || refund.refunds.length > 0) ? (
+        <Card>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <CardTitle>{refund.due > 0 ? tf("refund.title") : tf("refund.list")}</CardTitle>
+            {refund.due > 0 ? (
+              <p className="text-sm font-semibold text-amber-800">{tf("refund.due", { amount: money(refund.due) })}</p>
+            ) : (
+              <p className="text-sm text-slate-600">{tf("refund.refunded", { amount: money(refund.refunded) })}</p>
+            )}
+          </div>
+          {refund.refunds.length > 0 ? (
+            <ul className="mb-4 divide-y divide-slate-100">
+              {refund.refunds.map((r) => (
+                <li key={r.id} className="flex min-h-12 flex-wrap items-center justify-between gap-2 py-2 text-sm text-slate-700">
+                  <span>
+                    <strong className="tabular-nums text-slate-900">{money(-r.amount)}</strong> · {date(r.date)}
+                    {r.method ? ` · ${t(`methods.${r.method}`)}` : ""}
+                    {r.reference ? <span className="text-slate-500"> · {r.reference}</span> : null}
+                  </span>
+                  <Link href={`/app/finance/${r.id}`} className="font-medium text-brand hover:underline">
+                    {tf("tabs.transactions")}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {refund.due > 0 ? (
+            <>
+              <p className="mb-3 text-sm text-slate-600">{tf("refund.body")}</p>
+              {canWrite ? <RefundForm id={doc.id} due={halalasToInput(refund.due)} today={toDateInput(today)} /> : null}
+            </>
+          ) : null}
         </Card>
       ) : null}
 

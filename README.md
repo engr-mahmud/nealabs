@@ -75,7 +75,7 @@ DATABASE_URL=<test url> npx prisma migrate deploy
 npm test
 ```
 
-Covers: tenant isolation (RLS, service layer and cross-company links for clients, sites, workers, sales documents, lines and payments), VAT and totals, ZATCA QR payload, numbering and conversion under concurrency, payments, Iqama encryption and masking, Excel import/export, trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
+Covers: tenant isolation (RLS, service layer and cross-company links for clients, sites, workers, sales documents, lines, payments and finance entries), VAT and totals, ZATCA QR payload, numbering and conversion under concurrency, payments, income and expenses (automatic income from payments, VAT split, refunds, voiding, site profit report, salary hook), Iqama encryption and masking, Excel import/export, trial expiry and read-only mode, phone verification and one trial per email + phone, billing cycle pricing, auth (hashing, sessions, reset, rate limit), validators and upload checks.
 
 Other checks: `npm run typecheck`, `npm run lint`, `npm run build`.
 
